@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+		<title>parsingXML</title>
+		<meta name="description" content="">
+		<meta name="author" content="kjnether">
+
+		<meta name="viewport" content="width=device-width; initial-scale=1.0">
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+		<link rel="stylesheet" type="text/css" href="new_file.css">
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script src="objectIntrospect.js"></script>
+	</head>
+
+	<body>
+		<div>
+			<header>
+				<h1>parsingXML</h1>
+			</header>
+			<nav>
+				<p>
+					<a href="/">Home</a>
+				</p>
+				<p>
+					<a href="/contact">Contact</a>
+				</p>
+			</nav>
+
+			<footer>
+				<p>
+					&copy; Copyright  by kjnether
+				</p>
+			</footer>
+		</div>
+		<script type="application/javascript">
+			console.log("hurrow");
+			//var url = 'http://openmaps.gov.bc.ca/mapserver/admin-boundaries?service=wms&request=getcapabilities&version=1.1.1';
+			//var url = 'http://openmaps.gov.bc.ca/mapserver/forest-admin-boundaries?service=wms&request=getcapabilities&version=1.1.1';
+			//var url = "http://openmaps.gov.bc.ca/mapserver/base3?service=wms&request=getcapabilities&version=1.1.1";
+			var url = 'http://openmaps.gov.bc.ca/imagex/ecw_wms.dll?service=wms&version=1.1.1&request=getcapabilities';
+			console.log("url is:" + url)
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open("GET", url, false);
+			xmlhttp.send();
+			var xmlDoc=xmlhttp.responseXML;
+
+			console.log("readystate: " + xmlhttp.readyState);
+			document.write("<div id='myheader' ><p>List of Layers in the WMS...<br></p></div>");
+			
+			var olWMSCap = new OpenLayers.Format.WMSCapabilities();
+			var LyrList = olWMSCap.read(xmlDoc);
+			
+			for (var propName in LyrList) { 
+				console.log("prop:", propName);
+			}
+			
+			//lyrListJson = JSON.stringify(LyrList);
+			//console.log('lyrListJson:' + lyrListJson) ;
+			//printObject(LyrList);
+			//printObj(LyrList);
+			
+			
+			for (var i = 0; i < LyrList.capability.layers.length; i++) {
+				//var elem = layers[i].getElementsByTagName("Name")[0].childNodes[0].nodeValue;
+				var counter = i + 1;
+				document.write("" + counter + " - " + LyrList.capability.layers[i].name + '<br>');
+				//console.log("justName: " + elem);
+			}
+			
+			function printObject(inObj) {
+				for ( var key1 in inObj) {
+					console.log(key1);
+					for (var key2 in inObj[key1]) {
+						console.log(typeof inObj[key1]);
+						console.log("    " + key2);
+						for (var key3 in inObj[key1][key2]) {
+							console.log("        " + key3);
+						}
+					}
+				}
+				
+			}
+			
+		</script>
+	</body>
+</html>

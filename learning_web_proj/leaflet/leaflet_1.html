@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>#map { height: 400px; width:500px } </style>
+ <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+ <script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+<meta charset="UTF-8">
+<title>leaflet Demo</title>
+</head>
+<body>
+This is going to be a map page
+ <div id="map"></div>
+ <script>
+ var KamloopsLatLong  = {lat: 50.67840411025711,
+                       long:-120.3390884399414 };
+ var map = L.map('map').setView([KamloopsLatLong.lat, KamloopsLatLong.long], 13);
+ L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+             attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+             }).addTo(map);
+             
+             
+             
+ map.on('click', function(e) { alert("Lat, Lon : " + e.latlng.lat + ", " + e.latlng.lng) });
+ var marker = L.marker([51.5, -0.09]).addTo(map);
+ </script>
+</body>
+</html>

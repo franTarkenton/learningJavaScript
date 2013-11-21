@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>testing 1 2 3</title>
+		<meta name="description" content="">
+		<meta name="author" content="kjnether">
+		<style>
+			#map {
+				width: 600px;
+				height: 512px;
+			}
+		</style>
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>
+	</head>
+
+	<body>
+		<div  id="map"></div>
+		<script defer="defer" type="text/javascript">
+
+			var options = {
+				projection : new OpenLayers.Projection("EPSG:900913"),
+				units : 'degrees'
+			};
+
+			var map = new OpenLayers.Map('map', options);
+			
+			var latLongVand = new OpenLayers.LonLat(-124.0089, 54.0143)
+			var center = latLongVand.transform('EPSG:4326', 'EPSG:3857');
+
+
+			var osm = new OpenLayers.Layer.OSM();
+
+			var bcwms = new OpenLayers.Layer.WMS("BCGov - Base Mapping", "http://openmaps.gov.bc.ca/mapserver/base3", {
+				layers : ['DBM_7H_MIL_POLITICAL', "DBM_7H_MIL_BATHYMETRIC_POLY", 'DBM_7H_MIL_POLITICAL_POLY_BC', 'DBM_7H_MIL_PARK_POLY', 'DBM_7H_MIL_ROADS_LINE'],
+			}, {isBaseLayer: false});
+			map.addLayers([osm, bcwms]);
+			map.setCenter(center, 5);
+
+		</script>
+	</body>
+</html>

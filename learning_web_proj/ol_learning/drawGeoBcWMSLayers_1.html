@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>testing 1 2 3</title>
+		<meta name="description" content="">
+		<meta name="author" content="kjnether">
+		<style>
+			#map {
+				width: 600px;
+				height: 512px;
+			}
+		</style>
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>
+	</head>
+
+	<body>
+		<div  id="map"></div>
+		<script defer="defer" type="text/javascript">
+			var lon = -124.0089;
+			// vanderhoof lat longs
+			var lat = 54.0143; 
+			var zoom = 5;
+			var map, layer;
+
+			var options = {
+				controls : [],
+				projection : new OpenLayers.Projection("EPSG:4326"),
+				units : 'degrees'
+			};
+
+			var map = new OpenLayers.Map('map', options);
+
+			var bcwms = new OpenLayers.Layer.WMS("BCGov - Base Mapping", "http://openmaps.gov.bc.ca/mapserver/base3", {
+				layers : ['DBM_7H_MIL_POLITICAL', "DBM_7H_MIL_BATHYMETRIC_POLY", 'DBM_7H_MIL_POLITICAL_POLY_BC', 'DBM_7H_MIL_PARK_POLY', 'DBM_7H_MIL_ROADS_LINE'],
+			});
+
+			//aliasproj = new OpenLayers.Projection("EPSG:3857");
+			//bcwms.projection = aliasproj;
+
+			map.addLayer(bcwms);
+
+			map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
+
+		</script>
+	</body>
+</html>

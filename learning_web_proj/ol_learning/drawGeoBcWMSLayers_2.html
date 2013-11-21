@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>testing 1 2 3</title>
+		<meta name="description" content="">
+		<meta name="author" content="kjnether">
+		<style>
+			#map {
+				width: 600px;
+				height: 512px;
+			}
+		</style>
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+	</head>
+
+	<body>
+		<div  id="map"></div>
+		<script defer="defer" type="text/javascript">
+			var lon = -124.0089;
+			// vanderhoof lat longs
+			var lat = 54.0143;
+			var zoom = 5;
+			// var options = {
+				// projection : new OpenLayers.Projection("EPSG:3005"),
+				// units : "m",
+			// };
+
+			// World Geodetic System 1984 projection (lon/lat)
+			var WGS84 = new OpenLayers.Projection("EPSG:4326");
+			var WGS84_google_mercator = new OpenLayers.Projection("EPSG:900913");
+			var albers = new OpenLayers.Projection("EPSG:3005");
+
+			var map = new OpenLayers.Map("map", {
+				controls : [
+				//allows user pan/zoom ability
+				new OpenLayers.Control.Navigation(),
+
+				//displays the pan/zoom tools
+				new OpenLayers.Control.PanZoom(),
+
+				//displays a layer switcher
+				new OpenLayers.Control.LayerSwitcher(),
+
+				//displays the mouse positions coordinates in a
+				//<div> html element with id coordinates
+				new OpenLayers.Control.MousePosition({
+					div : document.getElementById("coordinates")
+				})],
+				projection : WGS84_google_mercator,
+				displayProjection : WGS84
+			});
+
+			var openstreetmap = new OpenLayers.Layer.OSM();
+
+
+			// finnaly working!
+			// var bcwms = new OpenLayers.Layer.WMS("BC Admin Layers", "http://openmaps.gov.bc.ca/mapserver/admin-boundaries", {
+				// layers : ['ALC_AGRI_LAND_RESERVE_POLYS', "TA_INTEGRATED_SURVEY_O", 'CNSRVTN_LNDS', 'CLAB_NATIONAL_PARKS_C', 'CLAB_NATIONAL_PARKS_O'],
+			// });
+
+			// var bcwms = new OpenLayers.Layer.WMS("BCGov - Base Mapping", "http://openmaps.gov.bc.ca/mapserver/base3", {
+			// layers : ['DBM_7H_MIL_POLITICAL', "DBM_7H_MIL_BATHYMETRIC_POLY", 'DBM_7H_MIL_POLITICAL_POLY_BC', 'DBM_7H_MIL_PARK_POLY', 'DBM_7H_MIL_ROADS_LINE'],'transparent': true
+			// },{isBaseLayer: false, projection: "EPSG:4326"});
+			
+			var bcwms = new OpenLayers.Layer.WMS("BCGov - Base Mapping", "http://openmaps.gov.bc.ca/mapserver/admin-boundaries", {
+			layers :  ['ALC_AGRI_LAND_RESERVE_POLYS', "TA_INTEGRATED_SURVEY_O", 'CNSRVTN_LNDS', 'CLAB_NATIONAL_PARKS_C', 'CLAB_NATIONAL_PARKS_O'],'transparent': true
+			},{isBaseLayer: false, projection: albers});
+			//map.addLayer(bcwms);
+// this is the request that is being made for an image from the mapserver
+//http://openmaps.gov.bc.ca/mapserver/admin-boundaries?LAYERS=ALC_AGRI_LAND_RESERVE_POLYS,TA_INTEGRATED_SURVEY_O,CNSRVTN_LNDS,CLAB_NATIONAL_PARKS_C,CLAB_NATIONAL_PARKS_O&TRANSPARENT=TRUE&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fpng&SRS=EPSG%3A900913&BBOX=-13707299.406416,6320424.9939648,-13697515.466797,6330208.933584&WIDTH=256&HEIGHT=256
+//http://openmaps.gov.bc.ca/mapserver/admin-boundaries?LAYERS=ALC_AGRI_LAND_RESERVE_POLYS,TA_INTEGRATED_SURVEY_O,CNSRVTN_LNDS,CLAB_NATIONAL_PARKS_C,CLAB_NATIONAL_PARKS_O&TRANSPARENT=TRUE&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&STYLES=&FORMAT=image%2Fpng&SRS=EPSG%3A900913&BBOX=-180,-90,5009197.085,5009287.085&WIDTH=256&HEIGHT=256
+			map.addLayers([openstreetmap, bcwms]);
+
+			// zooming in to vancouver
+			var mapextent = new OpenLayers.Bounds(-123.17341, 49.24343, -123.06183, 49.29899).transform(WGS84, map.getProjectionObject());
+			map.zoomToExtent(mapextent);
+			//map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
+
+		</script>
+	</body>
+</html>
