@@ -11,10 +11,10 @@
 		<meta name="author" content="kjnether">
 		<meta name="viewport" content="width=device-width; initial-scale=1.0">
 		<link rel="stylesheet" href="test_edittoolbar.css" type="text/css">
-		<script src="../../libs/OpenLayers.js"></script>
-		<link rel="stylesheet" type="text/css" href="../../libs/theme/default/style.css">
-		<script type="text/javascript" src="../../libs/javascript.util.js"></script>
-		<script type="text/javascript" src="../../libs/jsts.js"></script>
+		<script src="../lib/OpenLayers.js"></script>
+		<link rel="stylesheet" type="text/css" href="../lib/theme/default/style.css">
+		<script type="text/javascript" src="../lib/javascript.util.js"></script>
+		<script type="text/javascript" src="../lib/jsts.js"></script>
 		<script type="text/javascript" src="https://raw.github.com/olooney/attache-array-js/master/attache.array.min.js"></script>
 		</script>
 		<style type="text/css">
@@ -59,9 +59,10 @@
             var lon = -124.0089;
             var lat = 54.0143;
             var zoom = 5;
+            //var 
             var gceipAddress = '108.59.81.196';
             
-            
+            OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
 
             function createMap() {
                 var options = {
@@ -82,8 +83,18 @@
                 bcwms = new OpenLayers.Layer.WMS("BCGov - Base Mapping", "http://openmaps.gov.bc.ca/mapserver/base3", {
                     layers : layerList,
                     isBaseLayer : false
-                });
+                }); 
                 bcwms.projection = aliasproj;
+                
+                
+                studyAreaWMS = new OpenLayers.Layer.WMS('WMS Study Area', 
+                										"http://" + gceipAddress + '/geoserver/wms',
+                										{'layers': 'cum_effects:study_bndry', transparent: true},
+                										{isBaseLayer: false, 
+                											opacity: .4});
+                studyAreaWMS.projection = aliasproj;
+
+                
             }
 
             function addVectorLayers() {
@@ -93,6 +104,7 @@
                     "default" : new OpenLayers.Style({
                         fillColor : "#0A8FFF",
                         strokeColor : "#030652",
+                        fillOpacity: .2
                     })
                 });
 
@@ -100,30 +112,28 @@
                 protocol = new OpenLayers.Protocol.WFS({
                     url : "http://" + gceipAddress + "/geoserver/wfs",
                     version : "1.1.0",
-                    //featurePrefix:"cum_effects",
-                    featureType : "sf:roads",
-                    featureNS : 'http://108.59.81.196/geoserver/catalogLayer'
+                    featureType : "study_bndry",
                 });
-                wfsLayer = new OpenLayers.Layer.Vector("WFS", {
+                studyAreaWFS = new OpenLayers.Layer.Vector("WFS", {
                     styleMap : wfsStyleMap,
-                    strategies : [new OpenLayers.Strategy.Fixed()],
-                    protocol : protocol,
-                    projection : new OpenLayers.Projection("EPSG:26713")
-                });
-
-                var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
-                renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
-                wfsLayer2 = new OpenLayers.Layer.Vector("States", {
-                    minScale : 15000000,
                     strategies : [new OpenLayers.Strategy.BBOX()],
-                    projection : new OpenLayers.Projection("EPSG:4326"),
-                    protocol : new OpenLayers.Protocol.WFS({
-                        url : "http://demo.opengeo.org/geoserver/wfs",
-                        featureType : "states",
-                        featureNS : "http://www.openplans.org/topp"
-                    }),
-
+                    protocol : protocol,
+                    projection : new OpenLayers.Projection("EPSG:4326") //telling the wfs how I want the coords served, ie what proj to get returned as
                 });
+                
+
+                // var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
+                // renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
+                // wfsLayer2 = new OpenLayers.Layer.Vector("States", {
+                    // minScale : 15000000,
+                    // strategies : [new OpenLayers.Strategy.BBOX()],
+                    // projection : new OpenLayers.Projection("EPSG:4326"),
+                    // protocol : new OpenLayers.Protocol.WFS({
+                        // url : "http://demo.opengeo.org/geoserver/wfs",
+                        // featureType : "states",
+                    // }),
+// 
+                // });
 
                 // The params below work, and draw up the tasmania roads.
                 // protocol = new OpenLayers.Protocol.WFS({
@@ -327,13 +337,14 @@
             addVectorLayers();
             addMapControls();
 
-            map.addLayers([osmLayer, bcwms, vectors, wfsLayer, wfsLayer2]);
+            map.addLayers([osmLayer,  studyAreaWMS  ]); //bcwms, vectors, 
+            
 
             //map.setCenter(new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 5);
             //map.setCenter(new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 8);
             //map.setCenter(new OpenLayers.LonLat(146.7, -41.8).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 8);
-            //map.setCenter(new OpenLayers.LonLat(-120.75, 49.53).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
-            map.setCenter(new OpenLayers.LonLat(-103.8, 44.48).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
+            map.setCenter(new OpenLayers.LonLat(-120.75, 49.53).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
+            //map.setCenter(new OpenLayers.LonLat(-103.8, 44.48).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
 		</script>
 	</body>
 </html>
