@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+		<title>LargePolygonWFS_v1</title>
+		<meta name="description" content="">
+		<meta name="author" content="kjnether">
+
+		<!-- <meta name="viewport" content="width=device-width; initial-scale=1.0"> -->
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico">
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+		<!-- <script src="../lib/javascript.util.js"></script> -->
+		<!-- <script src="../lib/jsts.js"></script> -->
+		<!-- <script src="https://rawgithub.com/olooney/attache-array-js/master/attache.array.min.js"></script> -->
+		<script src="../lib/OpenLayers.js"></script>
+		<!-- <script src="LargePolygon.js"></script> -->
+		<!-- <script src="./SimpleMap.js"></script> -->
+		<script src="./SimpleMap_modular.js"></script>
+
+		<link rel="stylesheet" type="text/css" href="LargePolygonWFS.css">
+		<link rel="stylesheet" type="text/css" href="../lib/theme/default/style.css">
+	</head>
+
+	<body>
+
+		<h1 id="title">WFS Protocol and Filter</h1>
+		<div id="tags">
+			filter, wfs, comparison
+		</div>
+		<p id="shortdesc">
+			Demonstrates the use of a filter in making GetFeature requests using the WFS protocol.
+		</p>
+		<div id="map" ></div>
+		<div id="docs">
+			<p>
+				If a vector layer has a filter and the protocol supports server-side filtering,
+				the filter will be serialized in requests for features.  The WFS protocol can be
+				used with a vector layer to serialize a filter using OGC Filter Encoding.  This
+				example requests all features that are
+				<code>
+					TYPE
+				</code>
+				"highway" or "road".
+			</p>
+			<p>
+				See the <a href="wfs-filter.js" target="_blank">wfs-filter source</a>
+				for details on how this is done.
+			</p>
+		</div>
+		<script>
+            // following if only using hte simpleMap.js file
+            // initMap();
+            // use this if using simpleMap_modular.js file
+            var mapObj = new maplib();
+            mapObj.printSomething();
+            //mapObj.someFunc();
+            mapObj.initMap();
+            //maplib.printSomething()
+		</script>
+	</body>
+
+	<!-- <div>
+	<header>
+	<h1>LargePolygonWFS_v1</h1>
+	</header>
+	<nav>
+	<p>
+	<a href="/">Home</a>
+	</p>
+	<p>
+	<a href="/contact">Contact</a>
+	</p>
+	</nav>
+
+	<div>
+
+	</div>
+
+	<footer>
+	<p>
+	&copy; Copyright  by kjnether
+	</p>
+	</footer>
+	</div>
+	</body>-->
+</html>
