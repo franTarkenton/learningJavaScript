@@ -86,15 +86,12 @@
                 }); 
                 bcwms.projection = aliasproj;
                 
-                
                 studyAreaWMS = new OpenLayers.Layer.WMS('WMS Study Area', 
                 										"http://" + gceipAddress + '/geoserver/wms',
                 										{'layers': 'cum_effects:study_bndry', transparent: true},
                 										{isBaseLayer: false, 
                 											opacity: .4});
                 studyAreaWMS.projection = aliasproj;
-
-                
             }
 
             function addVectorLayers() {
