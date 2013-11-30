@@ -16,9 +16,9 @@
 		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
 		<link rel="shortcut icon" href="/favicon.ico">
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-		<!-- <script src="../lib/javascript.util.js"></script> -->
-		<!-- <script src="../lib/jsts.js"></script> -->
-		<!-- <script src="https://rawgithub.com/olooney/attache-array-js/master/attache.array.min.js"></script> -->
+		<script src="../lib/javascript.util.js"></script>
+		<script src="../lib/jsts.js"></script>
+		<script src="https://rawgithub.com/olooney/attache-array-js/master/attache.array.min.js"></script>
 		<script src="../lib/OpenLayers.js"></script>
 		<!-- <script src="LargePolygon.js"></script> -->
 		<!-- <script src="./SimpleMap.js"></script> -->
@@ -45,6 +45,13 @@
 					<button class='button' type="button" onclick="maplib.drawAOI('poly')" style="width: 150px;">
 						Draw Polygon
 					</button>
+					<button class='button' type="button" onclick="maplib.clearAOI()" style="width: 150px;">
+						Clear All Polygons
+					</button>
+					<button class='button' type="button" onclick="maplib.reportOnDrawing()" style="width: 150px;">
+						Submit for Analysis
+					</button>
+
 				</div>
 				<div id='mainpanel'>
 					<div id="map" ></div>
@@ -59,7 +66,6 @@
 	    // if using simpleMap_modular.js file
 	    //var mapObj = new maplib();
 	    maplib.initMap();
-	    maplib.printSomething();
 	    //mapObj.someFunc();
 	     maplib.addMapControls();
 		</script>
