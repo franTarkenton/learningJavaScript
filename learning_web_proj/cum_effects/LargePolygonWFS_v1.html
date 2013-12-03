@@ -1,73 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
+    <head>
+        <meta charset="utf-8">
 
-		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
-		Remove this if you use the .htaccess -->
-		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+        Remove this if you use the .htaccess -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-		<title>LargePolygonWFS_v1</title>
-		<meta name="description" content="">
-		<meta name="author" content="kjnether">
+        <title>LargePolygonWFS_v1</title>
+        <meta name="description" content="">
+        <meta name="author" content="kjnether">
 
-		<!-- <meta name="viewport" content="width=device-width; initial-scale=1.0"> -->
+        <!-- <meta name="viewport" content="width=device-width; initial-scale=1.0"> -->
 
-		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
-		<link rel="shortcut icon" href="/favicon.ico">
-		<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-		<script src="../lib/javascript.util.js"></script>
-		<script src="../lib/jsts.js"></script>
-		<script src="https://rawgithub.com/olooney/attache-array-js/master/attache.array.min.js"></script>
-		<script src="../lib/OpenLayers.js"></script>
-		<!-- <script src="LargePolygon.js"></script> -->
-		<!-- <script src="./SimpleMap.js"></script> -->
-		<script src="./SimpleMap_modular_v2.js"></script>
-		<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+        <!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+        <link rel="shortcut icon" href="/favicon.ico">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <script src="../lib/javascript.util.js"></script>
+        <script src="../lib/jsts.js"></script>
+        <script src="https://rawgithub.com/olooney/attache-array-js/master/attache.array.min.js"></script>
+        <script src="../lib/OpenLayers.js"></script>
+        <script src="./SimpleMap_modular_v2.js"></script>
+        <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 
-		<link rel="stylesheet" type="text/css" href="LargePolygonWFS.css">
-		<link rel="stylesheet" type="text/css" href="../lib/theme/default/style.css">
-	</head>
+        <link rel="stylesheet" type="text/css" href="../lib/theme/default/style.css">
 
-	<body>
-		<div id="container">
-			<div id="titlebar">
-				<h1 id="title">Cumulative Effects Reporting</h1>
-			</div>
-			<div id='mainSection'>
-				<div id='sidepanel'>
-					<h2> Create Report </h2>
-					<h4>Draw Reporting Area</h4>
-					<button class='button' type="button" onclick="maplib.drawAOI('free')" style="width: 150px;">
-						Draw Freehand
-					</button>
-					<!-- onclick="drawAOI('poly')" -->
-					<button class='button' type="button" onclick="maplib.drawAOI('poly')" style="width: 150px;">
-						Draw Polygon
-					</button>
-					<button class='button' type="button" onclick="maplib.clearAOI()" style="width: 150px;">
-						Clear All Polygons
-					</button>
-					<button class='button' type="button" onclick="maplib.reportOnDrawing()" style="width: 150px;">
-						Submit for Analysis
-					</button>
+        <link href="../lib/jquery-ui-1.10.3/css/ui-lightness/jquery-ui-1.10.3.custom.css" rel="stylesheet">
+        <script src="../lib/jquery-ui-1.10.3/js/jquery-1.9.1.js"></script>
+        <script src="../lib/jquery-ui-1.10.3/js/jquery-ui-1.10.3.custom.js"></script>
+<link rel="stylesheet" type="text/css" href="LargePolygonWFS.css">
 
-				</div>
-				<div id='mainpanel'>
-					<div id="map" ></div>
-				</div>
+        <script>
+            $(function() {
+                $("#accordion").accordion({ collapsible: true,
+                    active: 0 });
+            });
+        </script>
+                
+    </head>
 
-			</div>
-			<div id='bottomElement'>
-				nothing for now
-			</div>
-		</div> <script>
-	    // following if only using hte simpleMap.js file initMap(); use this
-	    // if using simpleMap_modular.js file
-	    //var mapObj = new maplib();
-	    maplib.initMap();
-	    //mapObj.someFunc();
-	     maplib.addMapControls();
-		</script>
-	</body>
+    <body>
+        <div id="container">
+            <div id="titlebar">
+                <h1 id="title">Cumulative Effects Reporting</h1>
+            </div>
+            <div id='mainSection'>
+
+                <div id='sidepanel'>
+
+                    <h2> Create Report </h2>
+                    <div id='accordion'>
+                        <h4>Draw Reporting Area</h4>
+                        <div>
+                            <button class='button'  type="button" onclick="maplib.drawAOI('free')" style="width: 110px;font: bold .8em Arial;">
+                                
+                                Draw Freehand
+                            </button>
+                            <!-- onclick="drawAOI('poly')" -->
+                            <button class='button' type="button" onclick="maplib.drawAOI('poly')" style="width: 110px;font: bold .8em Arial;">
+                                Draw Polygon
+                            </button>
+                            <button class='button' type="button" onclick="maplib.clearAOI()" style="width: 110px;font: bold .8em Arial;">
+                                Clear All Polygons
+                            </button>
+                            <button class='button' type="button" onclick="maplib.reportOnDrawing()" style="width: 110px;font: bold .8em Arial;">
+                                Submit for Analysis
+                            </button>
+                        </div>
+                        <h4> Layer Controls</h4>
+                        <div>
+                            <button class='button' type="button" onclick="maplib.identify()" style="width: 110px; font: bold .8em Arial;">
+                                <img src="icons/identify_10x10.jpeg"/>
+                                identify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id='mainpanel'>
+                    <div id="map" ></div>
+                </div>
+
+            </div>
+            <div id='bottomElement'>
+                nothing for now
+            </div>
+        </div>
+        <script>
+            // following if only using hte simpleMap.js file initMap(); use this
+            // if using simpleMap_modular.js file
+            //var mapObj = new maplib();
+            maplib.initMap();
+            //mapObj.someFunc();
+            maplib.addMapControls();
+        </script>
+    </body>
 </html>

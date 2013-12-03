@@ -14,6 +14,7 @@ var maplib = ( function() {
         var gce_wfs = "http://" + gce_ip + "/geoserver/wfs"
         var muleDeerWFS;
         var muleDeerProtocolWFS;
+        var infoControl;
 
         var wfsStyleMap = new OpenLayers.StyleMap({
             "default" : new OpenLayers.Style({
@@ -94,13 +95,13 @@ var maplib = ( function() {
                 url : gce_wfs,
                 version : "1.1.0",
                 featureType : "mule_deer",
-      
+
             });
             muleDeerWFS = new OpenLayers.Layer.Vector("WFS", {
                 styleMap : wfsStyleMap,
                 strategies : [new OpenLayers.Strategy.BBOX()],
                 protocol : muleDeerProtocolWFS,
-                projection : new OpenLayers.Projection("EPSG:900913") //This is how the coordinates will be served
+                projection : new OpenLayers.Projection("EPSG:900913") //EPSG:4326  EPSG:900913 This is how the coordinates will be served
             });
             if (addToMap === true) {
                 map.addLayer(muleDeerWFS);
@@ -114,8 +115,8 @@ var maplib = ( function() {
          */
         function addCumEffectsLayers_WMS() {
 
-            var cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", "http://108.59.81.196:8080/geoserver/cum_effects/wms", {
-                LAYERS : 'cum_effects:study_bndry',
+            var cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", "http://108.59.81.196/geoserver/wms", {
+                layers : 'cum_effects:study_bndry',
                 STYLES : '',
                 format : 'image/png',
                 tiled : true,
@@ -125,15 +126,13 @@ var maplib = ( function() {
                 opacity : 0.35,
                 buffer : 0,
                 displayOutsideMaxExtent : true,
-                isBaseLayer : false,
-                yx : {
-                    'EPSG:3005' : false
-                }
+                isBaseLayer : false
+
             });
             map.addLayer(cumEffectsStudyArea);
 
-            var cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", "http://108.59.81.196:8080/geoserver/cum_effects/wms", {
-                LAYERS : 'cum_effects:mule_deer',
+            var cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", "http://108.59.81.196/geoserver/wms", {
+                layers : 'cum_effects:mule_deer',
                 STYLES : '',
                 format : 'image/png',
                 tiled : true,
@@ -143,10 +142,8 @@ var maplib = ( function() {
                 opacity : 0.35,
                 buffer : 0,
                 displayOutsideMaxExtent : true,
-                isBaseLayer : false,
-                yx : {
-                    'EPSG:3005' : false
-                }
+                isBaseLayer : false
+
             });
             map.addLayer(cumEffectsMuleDeer);
         }
@@ -164,8 +161,18 @@ var maplib = ( function() {
             var jstsReader = new jsts.io.WKTReader();
 
             var intersectFeature = drawingLayer.features[0];
+
+            var intersectFeature_albers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3005"));
+            console.log("drawinglayer in albers?: " + intersectFeature_albers);
+
             var intersectGeomString = intersectFeature.geometry.toString();
+            var intersectGeomAlbers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3005"));
+            var intersectGeomString = intersectGeomAlbers.toString();
             var intersectJSTSGeom = jstsReader.read(intersectGeomString);
+            console.log("first feature geometry (albers) is: " + intersectGeomString);
+
+            var albersProjection = new OpenLayers.Projection("EPSG:3005");
+
             for (var i = 0; i < features.length; i += 1) {
                 // first test to see of the geometry intersects, if it
                 // does then we will calculate the portions that are
@@ -174,8 +181,18 @@ var maplib = ( function() {
                 // if there is an intersection should then test for contains.
                 // if the poly is contained then we do not have to determine
                 // the portions that intersect.
-                console.log("feature count: "  + features[i].geometry);
-                var jstsGeom = jstsReader.read(features[i].geometry.toString());
+                console.log("feature count: " + i + '  ');
+
+                var albersGeom = features[i].geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3005"));
+
+                var jstsGeom = jstsReader.read(albersGeom.toString());
+                console.log("ol area: " + features[i].geometry.getArea());
+                console.log("ol area: " + features[i].geometry.getGeodesicArea(albersProjection));
+                //console.log("atribs: " + features[i].attributes)
+                console.log("SHAPE_AREA: " + features[i].attributes.Shape_Area);
+                console.log("ATT_2_VAL: " + features[i].attributes.ATT_2_VAL);
+
+                console.log("jsts area: " + jstsGeom.getArea());
                 // is it contained?
                 if (intersectJSTSGeom.contains(intersectJSTSGeom)) {
                     // just add it to the new layer
@@ -206,6 +223,59 @@ var maplib = ( function() {
             drawingLayer.removeAllFeatures();
         };
 
+        mapObj.identify = function identify() {
+            // need to figure out how to query layers on the map now
+            console.log("idenfify is:" + infoControl);
+            if ( typeof (infoControl) === 'undefined') {
+                console.log("creating the controls");
+                createIdentifyControl();
+            }
+            console.log('info ctrl activated');
+            infoControl.activate();
+        };
+
+        function createIdentifyControl_old() {
+            var wmsControlParams = {
+                autoActivate : false,
+                infoFormat : "application/vnd.ogc.gml",
+                maxFeatures : 3,
+                url : "http://108.59.81.196/geoserver/wms",
+                title : "Click on Feature!",
+                layers : ['mule_deer'],
+                queryVisible : true
+            };
+            var wmsClickEventListener = {
+
+                getfeatureinfo : function(event) {
+                    console.log("click event has been recieved");
+                    var items = [];
+                    map.addPopup(new OpenLayers.Popup.FramedCloud("chicken", map.getLonLatFromPixel(event.xy), null, event.text, null, true));
+                }
+            };
+            wmsControlParams.eventListener = wmsClickEventListener;
+            infoControl = new OpenLayers.Control.WMSGetFeatureInfo(wmsControlParams);
+            map.addControl(infoControl);
+            console.log("info control created");
+        }
+
+        function createIdentifyControl() {
+            infoControl = new OpenLayers.Control.WMSGetFeatureInfo({
+                url : 'http://108.59.81.196/geoserver/wms',
+                title : 'Identify features by clicking',
+                queryVisible : true,
+                eventListeners : {
+                    getfeatureinfo : function(event) {
+                        console.log("got here");
+                        map.addPopup(new OpenLayers.Popup.FramedCloud("chicken", map.getLonLatFromPixel(event.xy), null, event.text, null, true));
+                    }
+                }
+            });
+            console.log("info control created");
+            map.addControl(infoControl);
+            infoControl.activate();
+        }
+
+
         mapObj.reportOnDrawing = function reportOnDrawing() {
             // get the information underneath the drawn polygon with a
             // wfs query in a web worker
@@ -217,26 +287,24 @@ var maplib = ( function() {
 
             var spatialFilterParams = {
                 type : OpenLayers.Filter.Spatial.INTERSECTS,
-                value : drawingGeom, 
-                projection: new OpenLayers.Projection("EPSG:900913")
+                value : drawingGeom,
+                projection : new OpenLayers.Projection("EPSG:900913")
 
             };
             var filter_spatial = new OpenLayers.Filter.Spatial(spatialFilterParams);
-            
-            
+
             var compObj = {
-                type: OpenLayers.Filter.Comparison.NOT_EQUAL_TO, 
-                property: 'RISK', 
-                value: 'NOT APPLICABLE'
+                type : OpenLayers.Filter.Comparison.NOT_EQUAL_TO,
+                property : 'RISK',
+                value : 'NOT APPLICABLE'
             };
             var filter_conditional = new OpenLayers.Filter.Comparison(compObj);
             var allfilters = [filter_spatial, filter_conditional]
-            var filterComb = new OpenLayers.Filter.Logical(
-                {
-                    filters:allfilters,
-                    type: OpenLayers.Filter.Logical.AND, 
-                });
-            
+            var filterComb = new OpenLayers.Filter.Logical({
+                filters : allfilters,
+                type : OpenLayers.Filter.Logical.AND,
+            });
+
             console.log("filter enabled!");
 
             // going to read the features from the vector layer that
@@ -244,21 +312,20 @@ var maplib = ( function() {
             // significantly more efficient to read straight from the protocol object.
 
             muleDeerProtocolWFS.read({
-                filter: filterComb,
-                callback: WFSReadCallBack
+                filter : filterComb,
+                callback : WFSReadCallBack
             });
         }
-        
         function objectToConsole(inObj) {
             var keys = Object.keys(inObj);
-            for (var i=0; i<keys.length; i++) {
+            for (var i = 0; i < keys.length; i++) {
                 console.log(keys[i] + ' = ' + inObj[keys[i]]);
             }
         }
-        
+
         function WFSReadCallBack(response) {
             // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
-            // read from the response and send the features to the 
+            // read from the response and send the features to the
             // intersect method.
             if (response.error) {
                 //TODO: should figure out what to do if an error is encountered here. Exceptions?
@@ -269,11 +336,12 @@ var maplib = ( function() {
                 console.log(response.error.exceptionReport.exceptions[0].texts[0]);
             }
             console.log("Callback called!");
-            
+
             console.log("elements in response: " + response.features.length);
             // now send the features to the intersection method
             calcIntersection(response.features);
         }
+
 
         mapObj.drawAOI = function drawAOI(drawMethod) {
             if ( typeof (drawingLayer) === "undefined") {
@@ -348,7 +416,8 @@ var maplib = ( function() {
             map.addControl(new OpenLayers.Control.ScaleLine());
             map.addControl(new OpenLayers.Control.Permalink('permalink'));
             var mousePositionControl = new OpenLayers.Control.MousePosition();
-            mousePositionControl.displayProjection = new OpenLayers.Projection('EPSG:4326');
+            mousePositionControl.displayProjection = new OpenLayers.Projection('EPSG:900913');
+            // EPSG:900913 EPSG:4326
             map.addControl(mousePositionControl);
             map.addControl(new OpenLayers.Control.KeyboardDefaults());
             map.addControl(new OpenLayers.Control.Navigation({

@@ -239,15 +239,16 @@ body {
     background-image: -o-linear-gradient(top, #eee, #ccc);
     background-image: linear-gradient(top, #eee, #ccc);
     border: 1px solid #777;
-    padding: 0 1.5em;
-    margin: 0.5em;
-    font: bold 1em/2em Arial, Helvetica;
+    padding: 0.1 .4em;
+    margin: 0.3em;
+    
+    font: bold .8em Arial;
     text-decoration: none;
     color: #333;
     text-shadow: 0 1px 0 rgba(255,255,255,.8);
     -moz-border-radius: .2em;
     -webkit-border-radius: .2em;
-    border-radius: .2em;
+    border-radius: .5em;
     -moz-box-shadow: 0 0 1px 1px rgba(255,255,255,.8) inset, 0 1px 0 rgba(0,0,0,.3);
     -webkit-box-shadow: 0 0 1px 1px rgba(255,255,255,.8) inset, 0 1px 0 rgba(0,0,0,.3);
     box-shadow: 0 0 1px 1px rgba(255,255,255,.8) inset, 0 1px 0 rgba(0,0,0,.3);
@@ -276,3 +277,10 @@ body {
     background: #fafafa;
 }
 
+
+/*Jquery over rides to make this view look right
+.ui-accordion .ui-accordion-content {
+	padding: .5em 1.5em;
+}
+
+*/
