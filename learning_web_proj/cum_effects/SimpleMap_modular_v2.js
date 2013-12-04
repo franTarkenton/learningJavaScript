@@ -10,11 +10,14 @@ var maplib = ( function() {
         var map;
         var drawingLayerName = 'tempdrawings';
         var drawingLayer;
-        var gce_ip = '108.59.81.196';
+        var gce_ip = '173.255.119.161';
         var gce_wfs = "http://" + gce_ip + "/geoserver/wfs"
+        var gce_wms = "http://" + gce_ip + "/geoserver/wms"
         var muleDeerWFS;
         var muleDeerProtocolWFS;
         var infoControl;
+        var albersProj = 'EPSG:3154'; // EPSG:3005
+        
 
         var wfsStyleMap = new OpenLayers.StyleMap({
             "default" : new OpenLayers.Style({
@@ -49,6 +52,7 @@ var maplib = ( function() {
                     fillOpacity : .2
                 })
             });
+            drawingLayer.projection = new OpenLayers.Projection(albersProj);
             map.addLayer(drawingLayer);
         };
 
@@ -87,7 +91,8 @@ var maplib = ( function() {
             // if there are too many than alert the user that the polygon is too
             // large, remove it and redraw
             // later on fix this limitation.
-
+            console.log("geom of draw feature: " + feat);
+            console.log("geom of drawing feature" + drawingLayer.features[0].geometry);
         };
 
         function addCumEffects_WFS(addToMap) {
@@ -101,7 +106,7 @@ var maplib = ( function() {
                 styleMap : wfsStyleMap,
                 strategies : [new OpenLayers.Strategy.BBOX()],
                 protocol : muleDeerProtocolWFS,
-                projection : new OpenLayers.Projection("EPSG:900913") //EPSG:4326  EPSG:900913 This is how the coordinates will be served
+                projection : new OpenLayers.Projection(albersProj) //EPSG:4326  EPSG:900913 This is how the coordinates will be served
             });
             if (addToMap === true) {
                 map.addLayer(muleDeerWFS);
@@ -115,7 +120,7 @@ var maplib = ( function() {
          */
         function addCumEffectsLayers_WMS() {
 
-            var cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", "http://108.59.81.196/geoserver/wms", {
+            var cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", gce_wms, {
                 layers : 'cum_effects:study_bndry',
                 STYLES : '',
                 format : 'image/png',
@@ -131,7 +136,7 @@ var maplib = ( function() {
             });
             map.addLayer(cumEffectsStudyArea);
 
-            var cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", "http://108.59.81.196/geoserver/wms", {
+            var cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", gce_wms, {
                 layers : 'cum_effects:mule_deer',
                 STYLES : '',
                 format : 'image/png',
@@ -162,16 +167,16 @@ var maplib = ( function() {
 
             var intersectFeature = drawingLayer.features[0];
 
-            var intersectFeature_albers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3005"));
+            var intersectFeature_albers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
             console.log("drawinglayer in albers?: " + intersectFeature_albers);
 
             var intersectGeomString = intersectFeature.geometry.toString();
-            var intersectGeomAlbers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3005"));
+            var intersectGeomAlbers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
             var intersectGeomString = intersectGeomAlbers.toString();
             var intersectJSTSGeom = jstsReader.read(intersectGeomString);
             console.log("first feature geometry (albers) is: " + intersectGeomString);
 
-            var albersProjection = new OpenLayers.Projection("EPSG:3005");
+            var albersProjection = new OpenLayers.Projection(albersProj);
 
             for (var i = 0; i < features.length; i += 1) {
                 // first test to see of the geometry intersects, if it
@@ -183,14 +188,18 @@ var maplib = ( function() {
                 // the portions that intersect.
                 console.log("feature count: " + i + '  ');
 
-                var albersGeom = features[i].geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection("EPSG:3005"));
+                var albersGeom = features[i].geometry.transform(new OpenLayers.Projection("EPSG:3005"), new OpenLayers.Projection(albersProj));
 
                 var jstsGeom = jstsReader.read(albersGeom.toString());
-                console.log("ol area: " + features[i].geometry.getArea());
-                console.log("ol area: " + features[i].geometry.getGeodesicArea(albersProjection));
-                //console.log("atribs: " + features[i].attributes)
-                console.log("SHAPE_AREA: " + features[i].attributes.Shape_Area);
-                console.log("ATT_2_VAL: " + features[i].attributes.ATT_2_VAL);
+                console.log("ol getarea(): " + features[i].geometry.getArea());
+                console.log("ol getgeodesicarea(): " + features[i].geometry.getGeodesicArea(albersProjection));
+                console.log("shape area : " + features[i].attributes.Shape_Area);
+                var diff = calcDiff(features[i].geometry.getGeodesicArea(albersProjection), features[i].attributes.Shape_Area)
+                console.log("--------------------------------------");
+                console.log("%diff: " + diff );
+                                console.log("--------------------------------------");
+
+                console.log("col ATT_2_VAL: " + features[i].attributes.ATT_2_VAL);
 
                 console.log("jsts area: " + jstsGeom.getArea());
                 // is it contained?
@@ -204,6 +213,17 @@ var maplib = ( function() {
                 }
             }
             console.log("finished!")
+        }
+        
+        function calcDiff(area1, area2){
+            var diff = area1 - area2;
+            var large = area2;
+            if (area1 > area2) {
+                large = area1
+            }
+            var percentdiff = (diff * 100) / large;
+            return percentdiff;
+            
         }
 
         function test_adddummyPolygon() {
@@ -239,7 +259,7 @@ var maplib = ( function() {
                 autoActivate : false,
                 infoFormat : "application/vnd.ogc.gml",
                 maxFeatures : 3,
-                url : "http://108.59.81.196/geoserver/wms",
+                url : gce_wms,
                 title : "Click on Feature!",
                 layers : ['mule_deer'],
                 queryVisible : true
@@ -260,7 +280,7 @@ var maplib = ( function() {
 
         function createIdentifyControl() {
             infoControl = new OpenLayers.Control.WMSGetFeatureInfo({
-                url : 'http://108.59.81.196/geoserver/wms',
+                url : gce_wms,
                 title : 'Identify features by clicking',
                 queryVisible : true,
                 eventListeners : {
@@ -288,7 +308,7 @@ var maplib = ( function() {
             var spatialFilterParams = {
                 type : OpenLayers.Filter.Spatial.INTERSECTS,
                 value : drawingGeom,
-                projection : new OpenLayers.Projection("EPSG:900913")
+                projection : new OpenLayers.Projection(albersProj)
 
             };
             var filter_spatial = new OpenLayers.Filter.Spatial(spatialFilterParams);
@@ -363,7 +383,7 @@ var maplib = ( function() {
                 console.log("adding osm base layer");
                 var osmLayer = new OpenLayers.Layer.OSM();
 
-                osmLayer.projection = new OpenLayers.Projection("EPSG:3857");
+                //osmLayer.projection = new OpenLayers.Projection("EPSG:3857");
                 lyrs2add.push(osmLayer)
                 //map.addLayers([osmLayer]);
             }
@@ -416,7 +436,7 @@ var maplib = ( function() {
             map.addControl(new OpenLayers.Control.ScaleLine());
             map.addControl(new OpenLayers.Control.Permalink('permalink'));
             var mousePositionControl = new OpenLayers.Control.MousePosition();
-            mousePositionControl.displayProjection = new OpenLayers.Projection('EPSG:900913');
+            mousePositionControl.displayProjection = new OpenLayers.Projection(albersProj);
             // EPSG:900913 EPSG:4326
             map.addControl(mousePositionControl);
             map.addControl(new OpenLayers.Control.KeyboardDefaults());
@@ -447,7 +467,7 @@ var maplib = ( function() {
         mapObj.initMap = function() {
             console.log("map is getting initialized...");
             var options = {
-                projection : new OpenLayers.Projection("EPSG:900913"),
+                projection : new OpenLayers.Projection("EPSG:900913"), // EPSG:3005 900913
                 units : 'm',
                 maxResolution : 156543.0339,
                 maxExtent : new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34, 20037508.34),
