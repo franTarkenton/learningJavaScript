@@ -1,42 +1,58 @@
 // experimenting with creating modular code.
 // self-invoking, anonymous function:
-"use strict"
 
-var maplib = ( function() {
+/*global alert: false, confirm: false, console: false, Debug: false, opera: false, prompt: false, WSH: false */
+var maplib = ( function() {"use strict";
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
-        var mapObj = {};
+
+        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap;
+
+        mapObj = {};
 
         // local variables
-        var map;
-        var drawingLayerName = 'tempdrawings';
-        var drawingLayer;
-        var gce_ip = '173.255.119.161';
-        var gce_wfs = "http://" + gce_ip + "/geoserver/wfs"
-        var gce_wms = "http://" + gce_ip + "/geoserver/wms"
-        var muleDeerWFS;
-        var muleDeerProtocolWFS;
-        var infoControl;
-        var albersProj = 'EPSG:3154'; // EPSG:3005
-        
+        drawingLayerName = 'tempdrawings';
+        gce_ip = '173.255.119.161';
+        gce_wfs = "http://" + gce_ip + "/geoserver/wfs";
+        gce_wms = "http://" + gce_ip + "/geoserver/wms";
+        albersProj = 'EPSG:3005';
+        // EPSG:3005
 
-        var wfsStyleMap = new OpenLayers.StyleMap({
+        wfsStyleMap = new OpenLayers.StyleMap({
             "default" : new OpenLayers.Style({
                 fillColor : "#0A8FFF",
                 strokeColor : "#030652",
-                fillOpacity : .2
+                fillOpacity : 0.2
             })
         });
+        
+        function objectToConsole(inObj) {
+            var i, keys;
+            keys = Object.keys(inObj);
+            for (i = 0; i < keys.length; i+=1) {
+                console.log(keys[i] + ' = ' + inObj[keys[i]]);
+            }
+        }
 
         function layerExists(lyrName) {
-            var retVal = false;
-            for (var i = 0; i < map.layers.length; i++) {
+            var retVal, i, curLyr;
+            retVal = false;
+            for ( i = 0; i < map.layers.length; i += 1) {
                 console.log("curlyr name is: " + map.layers[i].name);
-                var curLyr = map.layers[i];
+                curLyr = map.layers[i];
                 if (curLyr.name === lyrName) {
-                    retVal = True;
+                    retVal = true;
                 }
             }
             return retVal;
+        }
+        
+        function doneFunc(feat) {
+            // may or may not need this, it is currently registered to the feature added event.
+            // var geomObj = feat.feature.geometry;
+            // var bounds = geomObj.getBounds();
+            // console.log("bounds are: " + bounds.toBBOX());
+            // console.log("new feature was created: " + feat.geometry + ' ' + feat.attributes + ' ' + feat.feature.geometry);
+            console.log("doneFunc called");
         }
 
         function addDrawingLayer() {
@@ -49,27 +65,19 @@ var maplib = ( function() {
                 "default" : new OpenLayers.Style({
                     fillColor : "#0A8FFF",
                     strokeColor : "#030652",
-                    fillOpacity : .2
+                    fillOpacity : 0.2
                 })
             });
             drawingLayer.projection = new OpenLayers.Projection(albersProj);
             map.addLayer(drawingLayer);
-        };
-
-        function doneFunc(feat) {
-            // may or may not need this, it is currently registered to the feature added event.
-            // var geomObj = feat.feature.geometry;
-            // var bounds = geomObj.getBounds();
-            // console.log("bounds are: " + bounds.toBBOX());
-            // console.log("new feature was created: " + feat.geometry + ' ' + feat.attributes + ' ' + feat.feature.geometry);
-            console.log("doneFunc called");
-        };
+        }
 
         function deactivateDrawingControl() {
             // iterates through the controls and returns the control for the
             // drawing layer.
-            var controls = map.getControlsByClass("OpenLayers.Control.DrawFeature");
-            for (var i = 0; i < controls.length; i++) {
+            var controls, i;
+            controls = map.getControlsByClass("OpenLayers.Control.DrawFeature");
+            for ( i = 0; i < controls.length; i+=1) {
                 console.log('layer is: ' + controls[i].layer.name + ' ' + controls[i].layer.id);
                 if (controls[i].layer.name === drawingLayerName) {
                     console.log("got here, found the control on the layer");
@@ -93,14 +101,13 @@ var maplib = ( function() {
             // later on fix this limitation.
             console.log("geom of draw feature: " + feat);
             console.log("geom of drawing feature" + drawingLayer.features[0].geometry);
-        };
+        }
 
         function addCumEffects_WFS(addToMap) {
             muleDeerProtocolWFS = new OpenLayers.Protocol.WFS({
                 url : gce_wfs,
                 version : "1.1.0",
-                featureType : "mule_deer",
-
+                featureType : "mule_deer"
             });
             muleDeerWFS = new OpenLayers.Layer.Vector("WFS", {
                 styleMap : wfsStyleMap,
@@ -119,8 +126,8 @@ var maplib = ( function() {
          * now.
          */
         function addCumEffectsLayers_WMS() {
-
-            var cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", gce_wms, {
+            var cumEffectsStudyArea, cumEffectsMuleDeer;
+            cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", gce_wms, {
                 layers : 'cum_effects:study_bndry',
                 STYLES : '',
                 format : 'image/png',
@@ -136,7 +143,7 @@ var maplib = ( function() {
             });
             map.addLayer(cumEffectsStudyArea);
 
-            var cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", gce_wms, {
+            cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", gce_wms, {
                 layers : 'cum_effects:mule_deer',
                 STYLES : '',
                 format : 'image/png',
@@ -162,23 +169,25 @@ var maplib = ( function() {
          */
         function calcIntersection(features) {
             // TODO: need to come back and add logic to make sure that we actually have a drawing feature to work with
+            var i,  jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers,
+            intersectJSTSGeom, albersProjection, intersectFeature;
             console.log("processing this number of features: " + features.length);
-            var jstsReader = new jsts.io.WKTReader();
+            jstsReader = new jsts.io.WKTReader();
 
-            var intersectFeature = drawingLayer.features[0];
+            intersectFeature = drawingLayer.features[0];
 
-            var intersectFeature_albers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
+            intersectFeature_albers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
             console.log("drawinglayer in albers?: " + intersectFeature_albers);
 
-            var intersectGeomString = intersectFeature.geometry.toString();
-            var intersectGeomAlbers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
-            var intersectGeomString = intersectGeomAlbers.toString();
-            var intersectJSTSGeom = jstsReader.read(intersectGeomString);
+            intersectGeomString = intersectFeature.geometry.toString();
+            intersectGeomAlbers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
+            intersectGeomString = intersectGeomAlbers.toString();
+            intersectJSTSGeom = jstsReader.read(intersectGeomString);
             console.log("first feature geometry (albers) is: " + intersectGeomString);
 
-            var albersProjection = new OpenLayers.Projection(albersProj);
+            albersProjection = new OpenLayers.Projection(albersProj);
 
-            for (var i = 0; i < features.length; i += 1) {
+            for ( i = 0; i < features.length; i += 1) {
                 // first test to see of the geometry intersects, if it
                 // does then we will calculate the portions that are
                 // insdie the drawing polygon.
@@ -196,8 +205,8 @@ var maplib = ( function() {
                 console.log("shape area : " + features[i].attributes.Shape_Area);
                 var diff = calcDiff(features[i].geometry.getGeodesicArea(albersProjection), features[i].attributes.Shape_Area)
                 console.log("--------------------------------------");
-                console.log("%diff: " + diff );
-                                console.log("--------------------------------------");
+                console.log("%diff: " + diff);
+                console.log("--------------------------------------");
 
                 console.log("col ATT_2_VAL: " + features[i].attributes.ATT_2_VAL);
 
@@ -212,27 +221,29 @@ var maplib = ( function() {
                     console.log("Toss it!");
                 }
             }
-            console.log("finished!")
+            console.log("finished!");
         }
-        
-        function calcDiff(area1, area2){
-            var diff = area1 - area2;
-            var large = area2;
+
+        function calcDiff(area1, area2) {
+            var diff, large, percentdiff;
+            diff = area1 - area2;
+            large = area2;
             if (area1 > area2) {
-                large = area1
+                large = area1;
             }
-            var percentdiff = (diff * 100) / large;
+            percentdiff = (diff * 100) / large;
             return percentdiff;
-            
+
         }
 
         function test_adddummyPolygon() {
+            var wktParser, wktpoly, feat1;
             if ( typeof (drawingLayer) === "undefined") {
                 addDrawingLayer();
             }
-            var wktParser = new OpenLayers.Format.WKT();
-            var wktpoly = "POLYGON((-13454551.096475 6371596.6845817,-13448206.823128 6372208.1808079,-13439531.220419 6369838.6329314,-13434983.217236 6363723.6706694,-13450347.05992 6359443.197086,-13454551.096475 6371596.6845817))";
-            var feat1 = wktParser.read(wktpoly);
+            wktParser = new OpenLayers.Format.WKT();
+            wktpoly = "POLYGON((-13454551.096475 6371596.6845817,-13448206.823128 6372208.1808079,-13439531.220419 6369838.6329314,-13434983.217236 6363723.6706694,-13450347.05992 6359443.197086,-13454551.096475 6371596.6845817))";
+            feat1 = wktParser.read(wktpoly);
             drawingLayer.addFeatures([feat1]);
         }
 
@@ -242,43 +253,8 @@ var maplib = ( function() {
         mapObj.clearAOI = function clearAOI() {
             drawingLayer.removeAllFeatures();
         };
-
-        mapObj.identify = function identify() {
-            // need to figure out how to query layers on the map now
-            console.log("idenfify is:" + infoControl);
-            if ( typeof (infoControl) === 'undefined') {
-                console.log("creating the controls");
-                createIdentifyControl();
-            }
-            console.log('info ctrl activated');
-            infoControl.activate();
-        };
-
-        function createIdentifyControl_old() {
-            var wmsControlParams = {
-                autoActivate : false,
-                infoFormat : "application/vnd.ogc.gml",
-                maxFeatures : 3,
-                url : gce_wms,
-                title : "Click on Feature!",
-                layers : ['mule_deer'],
-                queryVisible : true
-            };
-            var wmsClickEventListener = {
-
-                getfeatureinfo : function(event) {
-                    console.log("click event has been recieved");
-                    var items = [];
-                    map.addPopup(new OpenLayers.Popup.FramedCloud("chicken", map.getLonLatFromPixel(event.xy), null, event.text, null, true));
-                }
-            };
-            wmsControlParams.eventListener = wmsClickEventListener;
-            infoControl = new OpenLayers.Control.WMSGetFeatureInfo(wmsControlParams);
-            map.addControl(infoControl);
-            console.log("info control created");
-        }
-
-        function createIdentifyControl() {
+        
+                function createIdentifyControl() {
             infoControl = new OpenLayers.Control.WMSGetFeatureInfo({
                 url : gce_wms,
                 title : 'Identify features by clicking',
@@ -295,6 +271,62 @@ var maplib = ( function() {
             infoControl.activate();
         }
 
+
+        mapObj.identify = function identify() {
+            // need to figure out how to query layers on the map now
+            console.log("idenfify is:" + infoControl);
+            if ( typeof (infoControl) === 'undefined') {
+                console.log("creating the controls");
+                createIdentifyControl();
+            }
+            console.log('info ctrl activated');
+            infoControl.activate();
+        };
+
+        function createIdentifyControl_old() {
+            var wmsControlParams, wmsClickEventListener;
+            
+            wmsControlParams = {
+                autoActivate : false,
+                infoFormat : "application/vnd.ogc.gml",
+                maxFeatures : 3,
+                url : gce_wms,
+                title : "Click on Feature!",
+                layers : ['mule_deer'],
+                queryVisible : true
+            };
+            wmsClickEventListener = {
+
+                getfeatureinfo : function(event) {
+                    console.log("click event has been recieved");
+                    var items = [];
+                    map.addPopup(new OpenLayers.Popup.FramedCloud("chicken", map.getLonLatFromPixel(event.xy), null, event.text, null, true));
+                }
+            };
+            wmsControlParams.eventListener = wmsClickEventListener;
+            infoControl = new OpenLayers.Control.WMSGetFeatureInfo(wmsControlParams);
+            map.addControl(infoControl);
+            console.log("info control created");
+        }
+        
+        function WFSReadCallBack(response) {
+            // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
+            // read from the response and send the features to the
+            // intersect method.
+            if (response.error) {
+                //TODO: should figure out what to do if an error is encountered here. Exceptions?
+                objectToConsole(response);
+                console.log("error with the WFS query");
+                console.log(response.error);
+                console.log(response.error.exceptionReport.exceptions[0]);
+                console.log(response.error.exceptionReport.exceptions[0].texts[0]);
+            }
+            console.log("Callback called!");
+
+            console.log("elements in response: " + response.features.length);
+            // now send the features to the intersection method
+            calcIntersection(response.features);
+        }
 
         mapObj.reportOnDrawing = function reportOnDrawing() {
             // get the information underneath the drawn polygon with a
@@ -335,33 +367,7 @@ var maplib = ( function() {
                 filter : filterComb,
                 callback : WFSReadCallBack
             });
-        }
-        function objectToConsole(inObj) {
-            var keys = Object.keys(inObj);
-            for (var i = 0; i < keys.length; i++) {
-                console.log(keys[i] + ' = ' + inObj[keys[i]]);
-            }
-        }
-
-        function WFSReadCallBack(response) {
-            // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
-            // read from the response and send the features to the
-            // intersect method.
-            if (response.error) {
-                //TODO: should figure out what to do if an error is encountered here. Exceptions?
-                objectToConsole(response)
-                console.log("error with the WFS query");
-                console.log(response.error);
-                console.log(response.error.exceptionReport.exceptions[0]);
-                console.log(response.error.exceptionReport.exceptions[0].texts[0]);
-            }
-            console.log("Callback called!");
-
-            console.log("elements in response: " + response.features.length);
-            // now send the features to the intersection method
-            calcIntersection(response.features);
-        }
-
+        };       
 
         mapObj.drawAOI = function drawAOI(drawMethod) {
             if ( typeof (drawingLayer) === "undefined") {
@@ -375,24 +381,26 @@ var maplib = ( function() {
         };
 
         mapObj.addBaseLayer = function addBaseLayer(layer2Add) {
-            var lyrs2add = [];
+            // TODO: add in functionality allowing the addition of a set of base layers using the args sent.
+            var gmapStreet, lyrs2add, gmapHybrid, gmapsat, osmLayer;
+            lyrs2add = [];
             if (layer2Add === "undefined") {
                 layer2Add = 'osm';
             }
             if (layer2Add === 'osm') {
                 console.log("adding osm base layer");
-                var osmLayer = new OpenLayers.Layer.OSM();
+                osmLayer = new OpenLayers.Layer.OSM();
 
-                //osmLayer.projection = new OpenLayers.Projection("EPSG:3857");
-                lyrs2add.push(osmLayer)
+                osmLayer.projection = new OpenLayers.Projection("EPSG:3857");
+                lyrs2add.push(osmLayer);
                 //map.addLayers([osmLayer]);
             }
 
-            var gmapStreet = new OpenLayers.Layer.Google("Google Streets", {
+            gmapStreet = new OpenLayers.Layer.Google("Google Streets", {
                 numZoomLevels : 20
             });
 
-            var gmapHybrid = new OpenLayers.Layer.Google("Google Hybrid", {
+            gmapHybrid = new OpenLayers.Layer.Google("Google Hybrid", {
                 //visibility : false,
                 type : google.maps.MapTypeId.HYBRID,
                 numZoomLevels : 23,
@@ -402,7 +410,7 @@ var maplib = ( function() {
             console.log("here");
             // map.addLayers([gmap]);
 
-            var gmapsat = new OpenLayers.Layer.Google('Google Satellite', {
+            gmapsat = new OpenLayers.Layer.Google('Google Satellite', {
                 type : google.maps.MapTypeId.SATELLITE,
                 numZoomLevels : 23,
                 MAX_ZOOM_LEVEL : 22
@@ -410,7 +418,7 @@ var maplib = ( function() {
             lyrs2add.push(gmapStreet);
             lyrs2add.push(gmapHybrid);
             lyrs2add.push(gmapsat);
-            lyrs2add.push(osmLayer)
+            lyrs2add.push(osmLayer);
             map.addLayers(lyrs2add);
             map.setBaseLayer(gmapHybrid);
             map.baseLayer = gmapHybrid;
@@ -418,7 +426,8 @@ var maplib = ( function() {
         };
 
         mapObj.addMapControls = function addMapControls() {
-            var t = '';
+            var mousePositionControl;
+            
             //map.addControl(new OpenLayers.Control.OverviewMap({
             //	autoPan : true,
             //	layer : [osmLayer]
@@ -435,7 +444,7 @@ var maplib = ( function() {
             map.addControl(new OpenLayers.Control.Permalink());
             map.addControl(new OpenLayers.Control.ScaleLine());
             map.addControl(new OpenLayers.Control.Permalink('permalink'));
-            var mousePositionControl = new OpenLayers.Control.MousePosition();
+            mousePositionControl = new OpenLayers.Control.MousePosition();
             mousePositionControl.displayProjection = new OpenLayers.Projection(albersProj);
             // EPSG:900913 EPSG:4326
             map.addControl(mousePositionControl);
@@ -465,9 +474,13 @@ var maplib = ( function() {
         };
 
         mapObj.initMap = function() {
+            // OSM uses projection 3857, but there is no def available for this so 
+            // manually adding it.
+            Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
+            
             console.log("map is getting initialized...");
             var options = {
-                projection : new OpenLayers.Projection("EPSG:900913"), // EPSG:3005 900913
+                projection : new OpenLayers.Projection("EPSG:900913"), 
                 units : 'm',
                 maxResolution : 156543.0339,
                 maxExtent : new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34, 20037508.34),
@@ -479,6 +492,7 @@ var maplib = ( function() {
             map.setCenter(new OpenLayers.LonLat(-120.75, 49.53).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
             console.log("done initialation");
         };
+
         return mapObj;
 
     }());
