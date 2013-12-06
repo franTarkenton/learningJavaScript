@@ -5,7 +5,7 @@
 var maplib = ( function() {"use strict";
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
 
-        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap;
+        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData;
 
         mapObj = {};
 
@@ -15,6 +15,7 @@ var maplib = ( function() {"use strict";
         gce_wfs = "http://" + gce_ip + "/geoserver/wfs";
         gce_wms = "http://" + gce_ip + "/geoserver/wms";
         albersProj = 'EPSG:3005';
+        webMercatorProj = 'EPSG:900913';
         // EPSG:3005
 
         wfsStyleMap = new OpenLayers.StyleMap({
@@ -24,11 +25,11 @@ var maplib = ( function() {"use strict";
                 fillOpacity : 0.2
             })
         });
-        
+
         function objectToConsole(inObj) {
             var i, keys;
             keys = Object.keys(inObj);
-            for (i = 0; i < keys.length; i+=1) {
+            for ( i = 0; i < keys.length; i += 1) {
                 console.log(keys[i] + ' = ' + inObj[keys[i]]);
             }
         }
@@ -45,7 +46,7 @@ var maplib = ( function() {"use strict";
             }
             return retVal;
         }
-        
+
         function doneFunc(feat) {
             // may or may not need this, it is currently registered to the feature added event.
             // var geomObj = feat.feature.geometry;
@@ -63,12 +64,14 @@ var maplib = ( function() {"use strict";
             drawingLayer.events.register('featureadded', ' ', doneFunc);
             var drawingLayerStyleMap = new OpenLayers.StyleMap({
                 "default" : new OpenLayers.Style({
-                    fillColor : "#0A8FFF",
-                    strokeColor : "#030652",
+                    fillColor : "#8BFF9F",
+                    strokeColor : "#06701D",
+                    strokeWidth : 2,
                     fillOpacity : 0.2
                 })
             });
-            drawingLayer.projection = new OpenLayers.Projection(albersProj);
+            drawingLayer.styleMap = drawingLayerStyleMap;
+            drawingLayer.projection = new OpenLayers.Projection(webMercatorProj);
             map.addLayer(drawingLayer);
         }
 
@@ -77,7 +80,7 @@ var maplib = ( function() {"use strict";
             // drawing layer.
             var controls, i;
             controls = map.getControlsByClass("OpenLayers.Control.DrawFeature");
-            for ( i = 0; i < controls.length; i+=1) {
+            for ( i = 0; i < controls.length; i += 1) {
                 console.log('layer is: ' + controls[i].layer.name + ' ' + controls[i].layer.id);
                 if (controls[i].layer.name === drawingLayerName) {
                     console.log("got here, found the control on the layer");
@@ -104,19 +107,130 @@ var maplib = ( function() {"use strict";
         }
 
         function addCumEffects_WFS(addToMap) {
-            muleDeerProtocolWFS = new OpenLayers.Protocol.WFS({
-                url : gce_wfs,
-                version : "1.1.0",
-                featureType : "mule_deer"
-            });
-            muleDeerWFS = new OpenLayers.Layer.Vector("WFS", {
-                styleMap : wfsStyleMap,
-                strategies : [new OpenLayers.Strategy.BBOX()],
-                protocol : muleDeerProtocolWFS,
-                projection : new OpenLayers.Projection(albersProj) //EPSG:4326  EPSG:900913 This is how the coordinates will be served
-            });
-            if (addToMap === true) {
-                map.addLayer(muleDeerWFS);
+            // muleDeerProtocolWFS = new OpenLayers.Protocol.WFS({
+            // url : gce_wfs,
+            // version : "1.1.0",
+            // featureType : "mule_deer",
+            // featurePrefix : 'cum_effects',
+            // srsName : webMercatorProj
+            // });
+            // muleDeerWFS = new OpenLayers.Layer.Vector("WFS", {
+            // styleMap : wfsStyleMap,
+            // strategies : [new OpenLayers.Strategy.BBOX()],
+            // protocol : muleDeerProtocolWFS,
+            // projection : new OpenLayers.Projection(webMercatorProj) //EPSG:4326  EPSG:900913 This is how the coordinates will be served
+            // });
+            // if (addToMap === true) {
+            // map.addLayer(muleDeerWFS);
+            // }
+            var i, lyr, protocol;
+            lyr = [];
+
+            for ( i = 0; i < analysisData.length; i += 1) {
+                if (analysisData[i].hasOwnProperty("wfsName") && analysisData[i].hasOwnProperty("wfsProtocolParams") && analysisData[i].hasOwnProperty("wfsLayerParams")) {
+                    protocol = new OpenLayers.Protocol.WFS(analysisData[i].wfsProtocolParams);
+                    analysisData[i].protocol = protocol;
+                    lyr = new OpenLayers.Layer.Vector(analysisData[i].wfsName, analysisData[i].wfsLayerParams);
+                    map.addLayer(lyr);
+                }
+            }
+        }
+
+        /**
+         * Identify all the data that is to be used in this analysis
+         * Each entry in the analysisData array is made up of a data object
+         * that may or may not have the following elements:
+         *
+         *      wmsName:    <the name / label assigned to the wms layer.>
+         *                  if this value is missing blank, null or otherwise
+         *                  undefined the wms layer will not be created!
+         *
+         *      wmsURL:     <the url to the wms service>
+         *
+         *      wmsParams:  <an object with the properties that get
+         *                  passed directly to the params portion of the
+         *                  openlayers wms constructor (represent the
+         *                  GetMap query string and parameter values)
+         *
+         *     wmsOptions:  The last object that gets sent to the openlayers
+         *                  wms constructor.  Contains the extra options that
+         *                  can be used to contruct a WMS layer.
+         *
+         *     wfsName:     The name of the WFS that will be created using the
+         *                  WFS parameters If this value is missing blank null or
+         *                  undefined a wfs layer will not get created even if the
+         *                  other parameters required to create it are present.
+         *
+         *    wfsProtocolParams: These are the options that are used to create a
+         *                  wfs protocol object.
+         *
+         *   wfsLayerParams: These are the parameters that are used to create a wfs
+         *                 vector layer from the wfs protocol object.
+         *
+         */
+        function defineAnalysisData() {
+            var ds1, ds2;
+            ds1 = {
+                wmsName : 'Study Area Boundary',
+                wmsURL : gce_wms,
+                wmsParams : {
+                    layers : 'cum_effects:mule_deer',
+                    STYLES : '',
+                    format : 'image/png',
+                    tiled : true,
+                    tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
+                    transparent : true
+                },
+                wmsOptions : {
+                    opacity : 0.35,
+                    buffer : 0,
+                    displayOutsideMaxExtent : true,
+                    isBaseLayer : false
+                },
+                wfsName : '',
+                wfsProtocolParams : {
+                    url : gce_wfs,
+                    version : "1.1.0",
+                    featureType : "mule_deer",
+                    featurePrefix : 'cum_effects',
+                    srsName : webMercatorProj
+                },
+                wfsLayerParams : {
+                    styleMap : wfsStyleMap,
+                    strategies : [new OpenLayers.Strategy.BBOX()],
+                    projection : new OpenLayers.Projection(webMercatorProj) //EPSG:4326  EPSG:900913 This is how the coordinates will be served
+                }
+            };
+            ds2 = {
+                wmsName : 'Study Area Boundary',
+                wmsURL : gce_wms,
+                wmsParams : {
+                    layers : 'cum_effects:study_bndry',
+                    STYLES : '',
+                    format : 'image/png',
+                    tiled : true,
+                    tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
+                    transparent : true
+                },
+                wmsOptions : {
+                    opacity : 0.35,
+                    buffer : 0,
+                    displayOutsideMaxExtent : true,
+                    isBaseLayer : false
+                },
+
+            };
+            analysisData = [ds1, ds2];
+        }
+
+        function addCumEffectsLayers_WMS() {
+            var i, lyr;
+            console.log("analysisData" + analysisData)
+            for ( i = 0; i < analysisData.length; i += 1) {
+                if (analysisData[i].hasOwnProperty("wmsName") && analysisData[i].hasOwnProperty("wmsURL") && analysisData[i].hasOwnProperty("wmsParams") && analysisData[i].hasOwnProperty("wmsOptions")) {
+                    lyr = new OpenLayers.Layer.WMS(analysisData[i].wmsName, analysisData[i].wmsURL, analysisData[i].wmsParams, analysisData[i].wmsOptions);
+                    map.addLayer(lyr);
+                }
             }
         }
 
@@ -125,7 +239,7 @@ var maplib = ( function() {"use strict";
          * they will be added as wms's with query capability for
          * now.
          */
-        function addCumEffectsLayers_WMS() {
+        function addCumEffectsLayers_WMS_old() {
             var cumEffectsStudyArea, cumEffectsMuleDeer;
             cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", gce_wms, {
                 layers : 'cum_effects:study_bndry',
@@ -169,59 +283,80 @@ var maplib = ( function() {"use strict";
          */
         function calcIntersection(features) {
             // TODO: need to come back and add logic to make sure that we actually have a drawing feature to work with
-            var i,  jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers,
-            intersectJSTSGeom, albersProjection, intersectFeature;
+            var i, jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers, intersectJSTSGeom, albersProjection, intersectFeature, webMercatorProj, curFeatureJSTSGeom, intersectGeom;
             console.log("processing this number of features: " + features.length);
             jstsReader = new jsts.io.WKTReader();
 
             intersectFeature = drawingLayer.features[0];
+            intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
+            //console.log("drawinglayer in albers?: " + intersectFeature);
 
-            intersectFeature_albers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
-            console.log("drawinglayer in albers?: " + intersectFeature_albers);
-
+            // intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
             intersectGeomString = intersectFeature.geometry.toString();
-            intersectGeomAlbers = intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
-            intersectGeomString = intersectGeomAlbers.toString();
+            console.log('intersect feature geom in ablers:' + intersectGeomString);
             intersectJSTSGeom = jstsReader.read(intersectGeomString);
-            console.log("first feature geometry (albers) is: " + intersectGeomString);
+            console.log("intersectGeomString: " + intersectGeomString);
 
             albersProjection = new OpenLayers.Projection(albersProj);
-
+            webMercatorProj = new OpenLayers.Projection('EPSG:900913');
             for ( i = 0; i < features.length; i += 1) {
-                // first test to see of the geometry intersects, if it
-                // does then we will calculate the portions that are
-                // insdie the drawing polygon.
+                // forces coordinate conversion to albers.  Allows area calculations to match the
+                // area calculations of the underlying GIS system.
+                // if the geometry was printed now will return in albers coordinates.
+                features[i].geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
 
-                // if there is an intersection should then test for contains.
-                // if the poly is contained then we do not have to determine
-                // the portions that intersect.
-                console.log("feature count: " + i + '  ');
-
-                var albersGeom = features[i].geometry.transform(new OpenLayers.Projection("EPSG:3005"), new OpenLayers.Projection(albersProj));
-
-                var jstsGeom = jstsReader.read(albersGeom.toString());
-                console.log("ol getarea(): " + features[i].geometry.getArea());
-                console.log("ol getgeodesicarea(): " + features[i].geometry.getGeodesicArea(albersProjection));
-                console.log("shape area : " + features[i].attributes.Shape_Area);
-                var diff = calcDiff(features[i].geometry.getGeodesicArea(albersProjection), features[i].attributes.Shape_Area)
-                console.log("--------------------------------------");
-                console.log("%diff: " + diff);
-                console.log("--------------------------------------");
-
-                console.log("col ATT_2_VAL: " + features[i].attributes.ATT_2_VAL);
-
-                console.log("jsts area: " + jstsGeom.getArea());
+                curFeatureJSTSGeom = jstsReader.read(features[i].geometry.toString());
+                consoleAreaReport(features[i], 'Shape_Area', 'ATT_2_VAL');
                 // is it contained?
-                if (intersectJSTSGeom.contains(intersectJSTSGeom)) {
+                if (intersectJSTSGeom.contains(curFeatureJSTSGeom)) {
                     // just add it to the new layer
                     console.log("feature is contained!");
-                } else if (intersectJSTSGeom.intersects(intersectJSTSGeom)) {
+                    // use whole polygon
+                } else if (intersectJSTSGeom.intersects(curFeatureJSTSGeom)) {
                     console.log("intersects!");
+                    // calc intersection
+                    intersectGeom = intersectJSTSGeom.intersection(curFeatureJSTSGeom);
+                    console.log("intersectGeom area: " + intersectGeom.getArea());
                 } else {
                     console.log("Toss it!");
                 }
+
+                // just draw linework, then tie the selected geometries to D3 Visualization
+                // below
+                // a) need to use jsts to calculate the area and linework for a data
+                //    object that can be consumed by d3
+                // b) add the d3 visualizations
+                // c) down the road make dynamic so that user can edit the selection polygon
+                //    live and have the data change live.
+
             }
             console.log("finished!");
+        }
+
+        /**
+         * used for debugging area of a feature.  Takes a
+         * feature and reports on its area, by comparing area
+         * calculated from geometries against the area in a column
+         * in the data.
+         */
+        function consoleAreaReport(feature, areaColumn, featureIdColumn) {
+            var albersProjection, webMercatorProj, jstsGeom, jstsReader;
+            albersProjection = new OpenLayers.Projection(albersProj);
+            webMercatorProj = new OpenLayers.Projection('EPSG:900913');
+
+            jstsReader = new jsts.io.WKTReader();
+            // This must act on the actual feature and not just return a value as it changes the
+            // return value of feature.getarea() ...
+
+            jstsGeom = jstsReader.read(feature.geometry.toString());
+            console.log("--------------------------------------------------");
+            console.log("OpenLayers getarea():             " + feature.geometry.getArea());
+            console.log("OpenLayers getGeodesicArea():     " + feature.geometry.getGeodesicArea(webMercatorProj));
+            //console.log("OpenLayers getarea() alb:         " + albersGeom.getArea());
+            //console.log("OpenLayers getGeodesicArea() alb: " + albersGeom.getGeodesicArea());
+            console.log("jsts getArea()              :     " + jstsGeom.getArea());
+            console.log("Area Column                 :     " + feature.attributes[areaColumn]);
+            console.log("feature id column           :     " + feature.attributes[featureIdColumn]);
         }
 
         function calcDiff(area1, area2) {
@@ -242,7 +377,9 @@ var maplib = ( function() {"use strict";
                 addDrawingLayer();
             }
             wktParser = new OpenLayers.Format.WKT();
-            wktpoly = "POLYGON((-13454551.096475 6371596.6845817,-13448206.823128 6372208.1808079,-13439531.220419 6369838.6329314,-13434983.217236 6363723.6706694,-13450347.05992 6359443.197086,-13454551.096475 6371596.6845817))";
+            //wktpoly = "POLYGON((-13454551.096475 6371596.6845817,-13448206.823128 6372208.1808079,-13439531.220419 6369838.6329314,-13434983.217236 6363723.6706694,-13450347.05992 6359443.197086,-13454551.096475 6371596.6845817))";
+            //wktpoly = 'POLYGON((-13449725.413772 6367813.0525681,-13446285.747499 6367277.9933702,-13446438.621556 6365175.9750926,-13447317.647381 6364182.2937251,-13449801.8508 6364411.6048099,-13450986.624738 6366360.7490309,-13449725.413772 6367813.0525681))';
+            wktpoly = 'POLYGON((-13449687.195257 6367583.7414833,-13447661.614008 6367583.7414833,-13446400.403042 6365672.8157764,-13446438.621556 6364067.6381827,-13449648.976743 6364220.5122392,-13450910.18771 6366055.0009178,-13449687.195257 6367583.7414833))';
             feat1 = wktParser.read(wktpoly);
             drawingLayer.addFeatures([feat1]);
         }
@@ -253,8 +390,8 @@ var maplib = ( function() {"use strict";
         mapObj.clearAOI = function clearAOI() {
             drawingLayer.removeAllFeatures();
         };
-        
-                function createIdentifyControl() {
+
+        function createIdentifyControl() {
             infoControl = new OpenLayers.Control.WMSGetFeatureInfo({
                 url : gce_wms,
                 title : 'Identify features by clicking',
@@ -285,7 +422,7 @@ var maplib = ( function() {"use strict";
 
         function createIdentifyControl_old() {
             var wmsControlParams, wmsClickEventListener;
-            
+
             wmsControlParams = {
                 autoActivate : false,
                 infoFormat : "application/vnd.ogc.gml",
@@ -308,7 +445,7 @@ var maplib = ( function() {"use strict";
             map.addControl(infoControl);
             console.log("info control created");
         }
-        
+
         function WFSReadCallBack(response) {
             // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
             // read from the response and send the features to the
@@ -328,6 +465,7 @@ var maplib = ( function() {"use strict";
             calcIntersection(response.features);
         }
 
+
         mapObj.reportOnDrawing = function reportOnDrawing() {
             // get the information underneath the drawn polygon with a
             // wfs query in a web worker
@@ -340,9 +478,9 @@ var maplib = ( function() {"use strict";
             var spatialFilterParams = {
                 type : OpenLayers.Filter.Spatial.INTERSECTS,
                 value : drawingGeom,
-                projection : new OpenLayers.Projection(albersProj)
-
+                projection : new OpenLayers.Projection(webMercatorProj)
             };
+
             var filter_spatial = new OpenLayers.Filter.Spatial(spatialFilterParams);
 
             var compObj = {
@@ -367,7 +505,7 @@ var maplib = ( function() {"use strict";
                 filter : filterComb,
                 callback : WFSReadCallBack
             });
-        };       
+        };
 
         mapObj.drawAOI = function drawAOI(drawMethod) {
             if ( typeof (drawingLayer) === "undefined") {
@@ -427,7 +565,7 @@ var maplib = ( function() {"use strict";
 
         mapObj.addMapControls = function addMapControls() {
             var mousePositionControl;
-            
+
             //map.addControl(new OpenLayers.Control.OverviewMap({
             //	autoPan : true,
             //	layer : [osmLayer]
@@ -445,7 +583,7 @@ var maplib = ( function() {"use strict";
             map.addControl(new OpenLayers.Control.ScaleLine());
             map.addControl(new OpenLayers.Control.Permalink('permalink'));
             mousePositionControl = new OpenLayers.Control.MousePosition();
-            mousePositionControl.displayProjection = new OpenLayers.Projection(albersProj);
+            mousePositionControl.displayProjection = new OpenLayers.Projection(webMercatorProj);
             // EPSG:900913 EPSG:4326
             map.addControl(mousePositionControl);
             map.addControl(new OpenLayers.Control.KeyboardDefaults());
@@ -474,19 +612,21 @@ var maplib = ( function() {"use strict";
         };
 
         mapObj.initMap = function() {
-            // OSM uses projection 3857, but there is no def available for this so 
+            // OSM uses projection 3857, but there is no def available for this so
             // manually adding it.
             Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
-            
+
             console.log("map is getting initialized...");
             var options = {
-                projection : new OpenLayers.Projection("EPSG:900913"), 
+                projection : new OpenLayers.Projection(webMercatorProj),
                 units : 'm',
                 maxResolution : 156543.0339,
                 maxExtent : new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34, 20037508.34),
                 controls : []
             };
             map = new OpenLayers.Map('map', options);
+            defineAnalysisData();
+
             mapObj.addBaseLayer('osm');
 
             map.setCenter(new OpenLayers.LonLat(-120.75, 49.53).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);

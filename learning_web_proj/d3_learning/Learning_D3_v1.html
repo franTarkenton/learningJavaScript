@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+        Remove this if you use the .htaccess -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <title>Learning_D3_v1</title>
+        <meta name="description" content="">
+        <meta name="author" content="kjnether">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+        <link rel="shortcut icon" href="/favicon.ico">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <script src='../lib/d3.v3.min.js'></script>
+    </head>
+
+    <body>
+        <style>
+			.chart div {
+				font: 10px sans-serif;
+				background-color: steelblue;
+				text-align: right;
+				padding: 3px;
+				margin: 1px;
+				color: white;
+			}
+
+        </style>
+        <div>
+            <header>
+                <h1>Learning_D3_v1</h1>
+            </header>
+            <div class='chart'>
+
+            </div>
+            <nav>
+                <p>
+                    <a href="/">Home</a>
+                </p>
+                <p>
+                    <a href="/contact">Contact</a>
+                </p>
+            </nav>
+
+            <div>
+
+            </div>
+
+            <footer>
+                <p>
+                    &copy; Copyright  by kjnether
+                </p>
+            </footer>
+        </div>
+        <script>
+            var data = [4, 8, 15, 16, 23, 42];
+            var body = d3.select("body");
+            var div = body.append("div");
+            div.html("Hello, world!");
+
+            //d3.select("body").style("color", "black").style("background-color", "white");
+
+            var x = d3.scale.linear().domain([0, d3.max(data)]).range([0, 600]);
+            var chart = d3.select(".chart");
+            var bar = chart.selectAll("div");
+            var barUpdate = bar.data(data);
+            var barEnter = barUpdate.enter().append("div");
+            barEnter.style("width", function(d) {
+                return x(d) + "px";
+            });
+            barEnter.text(function(d) {
+                return d;
+            });
+
+        </script>
+    </body>
+</html>
