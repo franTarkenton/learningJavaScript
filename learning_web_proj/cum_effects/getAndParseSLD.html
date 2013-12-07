@@ -1,0 +1,115 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+        <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+        Remove this if you use the .htaccess -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <title>getAndParseSLD</title>
+        <meta name="description" content="">
+        <meta name="author" content="kjnether">
+
+        <!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+        <link rel="shortcut icon" href="/favicon.ico">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <script src="../lib/OpenLayers.js"></script>
+
+    </head>
+
+    <body>
+        <div>
+            <header>
+                <h1>getAndParseSLD</h1>
+            </header>
+            <div style="width:100%; height:100%" id="map"></div>
+            <footer>
+                <p>
+                    &copy; Copyright  by kjnether
+                </p>
+            </footer>
+        </div>
+        <script>
+            OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
+            var options = {
+                projection : new OpenLayers.Projection("EPSG:900913"),
+                units : 'm',
+                maxResolution : 156543.0339,
+                maxExtent : new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34, 20037508.34),
+                controls : []
+            };
+            var map = new OpenLayers.Map('map', options);
+            osmLayer = new OpenLayers.Layer.OSM();
+            osmLayer.projection = new OpenLayers.Projection("EPSG:3857");
+            map.addLayer(osmLayer)
+
+            var navOptions = {
+                zoomWheelEnabled : true,
+                autoActivate : true
+            };
+            // wms layer
+            mule_deer = new OpenLayers.Layer.WMS("mule Deer Layer", 'http://subban.no-ip.biz/geoserver/wms', {
+                layers : 'cum_effects:mule_deer',
+                STYLES : '',
+                format : 'image/png',
+                tiled : true,
+                tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
+                transparent : true
+            }, {
+                opacity : 0.35,
+                buffer : 0,
+                displayOutsideMaxExtent : true,
+                isBaseLayer : false
+            });
+            map.addLayer(mule_deer);
+
+            var navCntrl = new OpenLayers.Control.Navigation(navOptions)
+            map.addControl(navCntrl);
+            //map.setCenter(new OpenLayers.LonLat(-124.0089, 54.0143).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 8);
+            map.setCenter(new OpenLayers.LonLat(-120.75, 49.53).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
+
+            // get the sld file
+            OpenLayers.Request.GET({
+                url : "http://subban.no-ip.biz/geoserver/ows?service=WMS&version=1.1.1&request=GetStyles&layers=mule_deer",
+                success : complete
+            });
+
+            function complete(request) {
+                sldFormat = new OpenLayers.Format.SLD();
+                sld = sldFormat.read(request.responseXML || request.responseText);
+                console.log("sld:" + sld);
+                printObject(sld, 1);
+                // so at this point have the sld, the next step is to 
+                // extract the color values.
+                // might also consider using the same column that is used 
+                // for the styling for the analysis.
+                // this example shows how to read the sld:
+                // http://openlayers.org/dev/examples/sld.js
+                
+                // after I figure out how to parse it, then we can use the 
+                // values to create the chart using D3.
+            }
+            
+            function printObject(obj, indent) {
+                // super handy method, don't want to lose this. Useful for debugging 
+                // and figuring out stuff.
+                var keys, i, key, value, spaces;
+                //console.log(typeof indent);
+                spaces = Array(indent).join(' ');
+                //console.log("spaces: " + spaces);
+                keys = Object.keys(obj);
+                for (i=0; i<keys.length; i+=1) {
+                    key = keys[i];
+                    value = obj[key];
+                    if ((typeof value).toString() === 'object') {
+                        indent = indent + 2;
+                        printObject(value, indent);
+                    } else {
+                        console.log(spaces + key + ' : ' + value);
+                    }
+                }
+            }
+
+        </script>
+    </body>
+</html>
