@@ -61,6 +61,7 @@ var maplib = ( function() {"use strict";
             // adds a vector layer that is used for capturing
             // drawing made to the map.
             drawingLayer = new OpenLayers.Layer.Vector(drawingLayerName);
+            drawingLayer.displayInLayerSwitcher = false;
             drawingLayer.events.register('featureadded', ' ', doneFunc);
             var drawingLayerStyleMap = new OpenLayers.StyleMap({
                 "default" : new OpenLayers.Style({
@@ -106,34 +107,27 @@ var maplib = ( function() {"use strict";
             console.log("geom of drawing feature" + drawingLayer.features[0].geometry);
         }
 
-        function addCumEffects_WFS(addToMap) {
-            // muleDeerProtocolWFS = new OpenLayers.Protocol.WFS({
-            // url : gce_wfs,
-            // version : "1.1.0",
-            // featureType : "mule_deer",
-            // featurePrefix : 'cum_effects',
-            // srsName : webMercatorProj
-            // });
-            // muleDeerWFS = new OpenLayers.Layer.Vector("WFS", {
-            // styleMap : wfsStyleMap,
-            // strategies : [new OpenLayers.Strategy.BBOX()],
-            // protocol : muleDeerProtocolWFS,
-            // projection : new OpenLayers.Projection(webMercatorProj) //EPSG:4326  EPSG:900913 This is how the coordinates will be served
-            // });
-            // if (addToMap === true) {
-            // map.addLayer(muleDeerWFS);
-            // }
+        function addAnalysisData(addToMap) {
             var i, lyr, protocol;
             lyr = [];
-
+            console.log("Adding WFS layers aka analysis data!");
             for ( i = 0; i < analysisData.length; i += 1) {
+
                 if (analysisData[i].hasOwnProperty("wfsName") && analysisData[i].hasOwnProperty("wfsProtocolParams") && analysisData[i].hasOwnProperty("wfsLayerParams")) {
-                    protocol = new OpenLayers.Protocol.WFS(analysisData[i].wfsProtocolParams);
-                    analysisData[i].protocol = protocol;
-                    lyr = new OpenLayers.Layer.Vector(analysisData[i].wfsName, analysisData[i].wfsLayerParams);
-                    map.addLayer(lyr);
+                    // also now need to make sure that the data has not already been added to the map
+                    if (!layerExists(analysisData[i].hasOwnProperty("wfsName"))) {
+                        console.log("creating protocol...");
+                        protocol = new OpenLayers.Protocol.WFS(analysisData[i].wfsProtocolParams);
+                        analysisData[i].wfsLayerParams.protocol = protocol;
+                        console.log("creating layer...");
+                        lyr = new OpenLayers.Layer.Vector(analysisData[i].wfsName, analysisData[i].wfsLayerParams);
+                        lyr.displayInLayerSwitcher = false;
+                        console.log("adding layer to map ..");
+                        map.addLayer(lyr);
+                    }
                 }
             }
+            console.log("analysis data has been added");
         }
 
         /**
@@ -167,11 +161,22 @@ var maplib = ( function() {"use strict";
          *   wfsLayerParams: These are the parameters that are used to create a wfs
          *                 vector layer from the wfs protocol object.
          *
+         * filter:   Define any filters that should be applied to the data,
+         *                 if there are more than one then tie then make this
+         *                 property equal to a Logical filter type that encloses
+         *                 the multiple conditions
+         *
+         * summary column: This is the column in the table
+         *                 associated with this layer that will
+         *                 be summarized by the report.
          */
         function defineAnalysisData() {
+            // TODO: more parameters to be added to this data structure to support
+            //       reporting.  Example which column from the data set should be
+            //       used to amalgamate the data.
             var ds1, ds2;
             ds1 = {
-                wmsName : 'Study Area Boundary',
+                wmsName : 'Mule Deer Risk',
                 wmsURL : gce_wms,
                 wmsParams : {
                     layers : 'cum_effects:mule_deer',
@@ -187,7 +192,7 @@ var maplib = ( function() {"use strict";
                     displayOutsideMaxExtent : true,
                     isBaseLayer : false
                 },
-                wfsName : '',
+                wfsName : 'Mule Deer WFS',
                 wfsProtocolParams : {
                     url : gce_wfs,
                     version : "1.1.0",
@@ -199,7 +204,13 @@ var maplib = ( function() {"use strict";
                     styleMap : wfsStyleMap,
                     strategies : [new OpenLayers.Strategy.BBOX()],
                     projection : new OpenLayers.Projection(webMercatorProj) //EPSG:4326  EPSG:900913 This is how the coordinates will be served
-                }
+                },
+                filter : new OpenLayers.Filter.Comparison({
+                    type : OpenLayers.Filter.Comparison.NOT_EQUAL_TO,
+                    property : 'RISK',
+                    value : 'NOT APPLICABLE'
+                }),
+                summaryColumn : "RISK"
             };
             ds2 = {
                 wmsName : 'Study Area Boundary',
@@ -224,54 +235,19 @@ var maplib = ( function() {"use strict";
         }
 
         function addCumEffectsLayers_WMS() {
-            var i, lyr;
+            var i, lyr, url;
             console.log("analysisData" + analysisData)
             for ( i = 0; i < analysisData.length; i += 1) {
                 if (analysisData[i].hasOwnProperty("wmsName") && analysisData[i].hasOwnProperty("wmsURL") && analysisData[i].hasOwnProperty("wmsParams") && analysisData[i].hasOwnProperty("wmsOptions")) {
                     lyr = new OpenLayers.Layer.WMS(analysisData[i].wmsName, analysisData[i].wmsURL, analysisData[i].wmsParams, analysisData[i].wmsOptions);
+                    console.log("getting url...");
                     map.addLayer(lyr);
+                    // url = lyr.getFullRequestString();
+                    //console.log("url for wms: " + lyr.getFullRequestString());
+                    objectToConsole(lyr.params);
+
                 }
             }
-        }
-
-        /**
-         * Going to add the cumulative effects WFS layers, but
-         * they will be added as wms's with query capability for
-         * now.
-         */
-        function addCumEffectsLayers_WMS_old() {
-            var cumEffectsStudyArea, cumEffectsMuleDeer;
-            cumEffectsStudyArea = new OpenLayers.Layer.WMS("cum_effects:study_bndry - Tiled", gce_wms, {
-                layers : 'cum_effects:study_bndry',
-                STYLES : '',
-                format : 'image/png',
-                tiled : true,
-                tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
-                transparent : true
-            }, {
-                opacity : 0.35,
-                buffer : 0,
-                displayOutsideMaxExtent : true,
-                isBaseLayer : false
-
-            });
-            map.addLayer(cumEffectsStudyArea);
-
-            cumEffectsMuleDeer = new OpenLayers.Layer.WMS("cum_effects:mule_deer - Tiled", gce_wms, {
-                layers : 'cum_effects:mule_deer',
-                STYLES : '',
-                format : 'image/png',
-                tiled : true,
-                tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
-                transparent : true
-            }, {
-                opacity : 0.35,
-                buffer : 0,
-                displayOutsideMaxExtent : true,
-                isBaseLayer : false
-
-            });
-            map.addLayer(cumEffectsMuleDeer);
         }
 
         /**
@@ -281,9 +257,10 @@ var maplib = ( function() {"use strict";
          * 3) adds the intersected features to a new layer
          * 4) draws the new layer
          */
-        function calcIntersection(features) {
+        function calcIntersection(summaryColumn, features) {
             // TODO: need to come back and add logic to make sure that we actually have a drawing feature to work with
-            var i, jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers, intersectJSTSGeom, albersProjection, intersectFeature, webMercatorProj, curFeatureJSTSGeom, intersectGeom;
+            var i, jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers, intersectJSTSGeom, albersProjection, intersectFeature, webMercatorProj, curFeatureJSTSGeom, intersectGeom, sumObj, sumColumnValue, area, totalAreaInInterest;
+            totalAreaInInterest = 0;
             console.log("processing this number of features: " + features.length);
             jstsReader = new jsts.io.WKTReader();
 
@@ -291,14 +268,13 @@ var maplib = ( function() {"use strict";
             intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
             //console.log("drawinglayer in albers?: " + intersectFeature);
 
-            // intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
             intersectGeomString = intersectFeature.geometry.toString();
-            console.log('intersect feature geom in ablers:' + intersectGeomString);
             intersectJSTSGeom = jstsReader.read(intersectGeomString);
-            console.log("intersectGeomString: " + intersectGeomString);
+            //console.log("intersectGeomString: " + intersectGeomString);
 
             albersProjection = new OpenLayers.Projection(albersProj);
             webMercatorProj = new OpenLayers.Projection('EPSG:900913');
+            sumObj = {};
             for ( i = 0; i < features.length; i += 1) {
                 // forces coordinate conversion to albers.  Allows area calculations to match the
                 // area calculations of the underlying GIS system.
@@ -311,16 +287,18 @@ var maplib = ( function() {"use strict";
                 if (intersectJSTSGeom.contains(curFeatureJSTSGeom)) {
                     // just add it to the new layer
                     console.log("feature is contained!");
+                    area = features[i].geometry.getArea();
                     // use whole polygon
                 } else if (intersectJSTSGeom.intersects(curFeatureJSTSGeom)) {
                     console.log("intersects!");
                     // calc intersection
                     intersectGeom = intersectJSTSGeom.intersection(curFeatureJSTSGeom);
-                    console.log("intersectGeom area: " + intersectGeom.getArea());
+                    area = intersectGeom.getArea();
                 } else {
                     console.log("Toss it!");
+                    area = 0;
                 }
-
+                console.log("area: " + area);
                 // just draw linework, then tie the selected geometries to D3 Visualization
                 // below
                 // a) need to use jsts to calculate the area and linework for a data
@@ -328,9 +306,40 @@ var maplib = ( function() {"use strict";
                 // b) add the d3 visualizations
                 // c) down the road make dynamic so that user can edit the selection polygon
                 //    live and have the data change live.
+                if (area > 0) {
+                    sumColumnValue = features[i].attributes[summaryColumn];
+                    if (!sumObj.hasOwnProperty(sumColumnValue)) {
+                        sumObj[sumColumnValue] = area;
 
+                    } else {
+                        sumObj[sumColumnValue] = sumObj[sumColumnValue] + area;
+                    }
+                    console.log(sumColumnValue + ' = ' + area);
+                }
+
+                // TODO: create new geometry of the analysis area
+
+                // now create the report:
+                totalAreaInInterest = totalAreaInInterest + area;
+            }
+            console.log("totalAreaInInterest:" + totalAreaInInterest);
+            console.log("submitted poly area: " + intersectFeature.geometry.getArea())
+
+            // Now calculate the area that falls outside polygons in this layer.
+            if (totalAreaInInterest < intersectFeature.geometry.getArea()) {
+                sumObj['undefinedArea'] = intersectFeature.geometry.getArea() - totalAreaInInterest;
             }
             console.log("finished!");
+            
+            
+            // in order to style things correctly need to retrieve the styling 
+            // used for the layer on the wms server.  Don't know quite how to do 
+            // this through the openlayers interface, but it looks like
+            // the following url will retrieve that file for a particular layer
+            // next step is to take what is retreived by that and parse it using 
+            // the parser.
+            
+            
         }
 
         /**
@@ -382,6 +391,7 @@ var maplib = ( function() {"use strict";
             wktpoly = 'POLYGON((-13449687.195257 6367583.7414833,-13447661.614008 6367583.7414833,-13446400.403042 6365672.8157764,-13446438.621556 6364067.6381827,-13449648.976743 6364220.5122392,-13450910.18771 6366055.0009178,-13449687.195257 6367583.7414833))';
             feat1 = wktParser.read(wktpoly);
             drawingLayer.addFeatures([feat1]);
+            console.log("finished adding polygon")
         }
 
         /**
@@ -446,10 +456,11 @@ var maplib = ( function() {"use strict";
             console.log("info control created");
         }
 
-        function WFSReadCallBack(response) {
+        function AnalysisDataSelectionCallBack(response) {
             // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
             // read from the response and send the features to the
             // intersect method.
+            var srcLayer, analysisDataRec;
             if (response.error) {
                 //TODO: should figure out what to do if an error is encountered here. Exceptions?
                 objectToConsole(response);
@@ -459,52 +470,134 @@ var maplib = ( function() {"use strict";
                 console.log(response.error.exceptionReport.exceptions[0].texts[0]);
             }
             console.log("Callback called!");
+            //objectToConsole(response);
+            //objectToConsole(response.features[0].attributes);
+            // its ugly and risky but this looks like the only way I can see to get the
+            // layer from the response object
+            srcLayer = response.features[0].fid.split('.')[0];
+            console.log("layername.fid:" + srcLayer);
 
             console.log("elements in response: " + response.features.length);
             // now send the features to the intersection method
-            calcIntersection(response.features);
+            analysisDataRec = getAnalysisDataRecordFromFeatureType(srcLayer);
+
+            calcIntersection(analysisDataRec.summaryColumn, response.features);
         }
 
+        function getAnalysisDataRecordFromFeatureType(layerName) {
+            var lyrs, i, name, lyrName, summCol, analysisDataRec;
+            analysisDataRec = undefined;
+            lyrs = map.getLayersByClass('OpenLayers.Layer.Vector');
+            for ( i = 0; i < analysisData.length; i += 1) {
+                if (analysisData[i].hasOwnProperty('wfsProtocolParams')) {
+                    name = analysisData[i].wfsProtocolParams.featureType;
+                    if (name === layerName) {
+                        console.log("found layer!");
+                        //lyrName = 'wfsName';
+                        analysisDataRec = analysisData[i]
+                        break;
+                    }
+                }
+            }
+            return analysisDataRec;
+        }
 
+        /**
+         * This method is called after a drawing polygon has been defined.  The method
+         * does the following:
+         *  a) makes sure the WFS layers exist, but readying the analysisData object
+         *     and adding any wfs layers that are defined there but not already
+         *     available to the map.
+         * b) creates a filter for all the analysis WFS layers.  The filter that
+         *    is created will either combine logic described in the  analysisData object,
+         *    with a spatial filter using the polygon that was just drawn, or if no
+         *    filter criteria has been defined it will simply add the spatial filter
+         * c) gets the layer with the name described in the property wfsName in the
+         *    analysisData object, and assigns the filter to the wfs protocol, and
+         *    also adds the callback AnalysisDataSelectionCallBack
+         */
         mapObj.reportOnDrawing = function reportOnDrawing() {
             // get the information underneath the drawn polygon with a
             // wfs query in a web worker
             // A) define a filter
-            addCumEffects_WFS();
+            //addCumEffects_WFS();
+            var i, junk, drawingGeom, spatialFilterParams, filter_spatial, compObj, filter_conditional, allfilters, filterComb, dataDict, atribFilter, filters, finalFilter, layers;
+            filters = [];
+            addAnalysisData();
             test_adddummyPolygon();
-            var drawingGeom = drawingLayer.features[0].geometry;
+            drawingGeom = drawingLayer.features[0].geometry;
             console.log("drawinglayer geom is:" + drawingGeom);
 
-            var spatialFilterParams = {
+            spatialFilterParams = {
                 type : OpenLayers.Filter.Spatial.INTERSECTS,
                 value : drawingGeom,
                 projection : new OpenLayers.Projection(webMercatorProj)
             };
 
-            var filter_spatial = new OpenLayers.Filter.Spatial(spatialFilterParams);
+            filter_spatial = new OpenLayers.Filter.Spatial(spatialFilterParams);
+            // iterate over the analysis data struct, looking for filter defs.  if any
+            // are found they are created, and the joined to the spatial filter above using
+            // 'and' logic
+            for ( i = 0; i < analysisData.length; i += 1) {
+                dataDict = analysisData[i];
+                // only want to apply filters on WFS layers.  Use the presence of
+                // wfsName to identify whether a layer is a wfs layer or not
+                if (dataDict.hasOwnProperty("wfsName")) {
+                    // make sure the filter param is defined.
+                    if (dataDict.hasOwnProperty("filter")) {
+                        atribFilter = dataDict.filter;
+                        filters.push(filter_spatial);
+                        filters.push(dataDict.filter);
+                        finalFilter = new OpenLayers.Filter.Logical({
+                            filters : filters,
+                            type : OpenLayers.Filter.Logical.AND
+                        });
+                    } else {
+                        finalFilter = filter_spatial;
+                    }
+                    // finally apply the filter to any read requests.
+                    // a) get the layer with the name === dataDict.wfsName
+                    // b) from that layer get the protocol object
+                    // c) apply to the protocol object this callback
+                    layers = map.getLayersByName(dataDict.wfsName);
+                    if (layers.length > 1) {
+                        // houston we have a problem!  For this app going to keep
+                        // layer names unique.  Should not get a layer with the same name
+                        // TODO: need to figure out how JS likes to do errors and exceptions  Add in the appropriate exception here
+                        console.log("ERROR:found (" + layers.length + ") than one layer with this name: " + dataDict.wfsName);
+                    } else {
+                        // from the layer get the protocol
+                        layers[0].protocol.read({
+                            filter : finalFilter,
+                            callback : AnalysisDataSelectionCallBack
+                        });
+                    }
+                }
+            }
 
-            var compObj = {
-                type : OpenLayers.Filter.Comparison.NOT_EQUAL_TO,
-                property : 'RISK',
-                value : 'NOT APPLICABLE'
-            };
-            var filter_conditional = new OpenLayers.Filter.Comparison(compObj);
-            var allfilters = [filter_spatial, filter_conditional]
-            var filterComb = new OpenLayers.Filter.Logical({
-                filters : allfilters,
-                type : OpenLayers.Filter.Logical.AND,
-            });
-
-            console.log("filter enabled!");
+            // compObj = {
+            // type : OpenLayers.Filter.Comparison.NOT_EQUAL_TO,
+            // property : 'RISK',
+            // value : 'NOT APPLICABLE'
+            // };
+            //filter_conditional = new OpenLayers.Filter.Comparison(compObj);
+            // allfilters = [filter_spatial, filter_conditional];
+            // filterComb = new OpenLayers.Filter.Logical({
+            // filters : allfilters,
+            // type : OpenLayers.Filter.Logical.AND,
+            // });
+            //
+            // console.log("filter enabled!");
 
             // going to read the features from the vector layer that
             // wraps the wfs protocol.  Down the road look into whether it is
             // significantly more efficient to read straight from the protocol object.
+            //muleDeerProtocolWFS.read({
+            //    filter : filterComb,
+            //    callback : WFSReadCallBack
+            //});
+            //for ()
 
-            muleDeerProtocolWFS.read({
-                filter : filterComb,
-                callback : WFSReadCallBack
-            });
         };
 
         mapObj.drawAOI = function drawAOI(drawMethod) {
@@ -518,7 +611,13 @@ var maplib = ( function() {"use strict";
             drawingLayer.events.register('featureadded', ' ', finishedDrawingPolygon);
         };
 
-        mapObj.addBaseLayer = function addBaseLayer(layer2Add) {
+        /**
+         * Adds a list of basemaps to the map.  Currently set up to
+         * add the options of osm, and google for basemaps.  Down the road
+         * may wish to add more.
+         * @param {Object} layer2Add
+         */
+        mapObj.addBaseMaps = function addBaseMaps(layer2Add) {
             // TODO: add in functionality allowing the addition of a set of base layers using the args sent.
             var gmapStreet, lyrs2add, gmapHybrid, gmapsat, osmLayer;
             lyrs2add = [];
@@ -592,30 +691,13 @@ var maplib = ( function() {"use strict";
                 zoomWheelEnabled : true,
                 autoActivate : true
             }));
-            //editingToolBar = new OpenLayers.Control.EditingToolbar(vectors);
-
-            // Adding Editing tools here
-            //map.addControl(editingToolBar);
-
-            // Add Selection Control, and deactivate it
-            // selection = new OpenLayers.Control.SelectFeature(vectors, {
-            // clickout : false,
-            // toggle : true,
-            // multiple : false,
-            // hover : false,
-            // toggleKey : "ctrlKey", // ctrl key removes from selection
-            // multipleKey : "shiftKey", // shift key adds to selection
-            // box : true
-            // });
-            // selection.deactivate();
-            // map.addControl(selection);
         };
 
         mapObj.initMap = function() {
             // OSM uses projection 3857, but there is no def available for this so
             // manually adding it.
             Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
-   
+
             console.log("map is getting initialized...");
             var options = {
                 projection : new OpenLayers.Projection(webMercatorProj),
@@ -627,7 +709,7 @@ var maplib = ( function() {"use strict";
             map = new OpenLayers.Map('map', options);
             defineAnalysisData();
 
-            mapObj.addBaseLayer('osm');
+            mapObj.addBaseMaps('osm');
 
             map.setCenter(new OpenLayers.LonLat(-120.75, 49.53).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()), 12);
             console.log("done initialation");
