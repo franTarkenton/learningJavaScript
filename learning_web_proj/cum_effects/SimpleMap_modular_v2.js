@@ -5,15 +5,17 @@
 var maplib = ( function() {"use strict";
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
 
-        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData;
+        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData, gce_domain, gce_ows;
 
         mapObj = {};
 
         // local variables
         drawingLayerName = 'tempdrawings';
         gce_ip = '173.255.119.161';
-        gce_wfs = "http://" + gce_ip + "/geoserver/wfs";
-        gce_wms = "http://" + gce_ip + "/geoserver/wms";
+        gce_domain = 'subban.no-ip.biz';
+        gce_wfs = "http://" + gce_domain + "/geoserver/wfs";
+        gce_wms = "http://" + gce_domain + "/geoserver/wms";
+        gce_ows = "http://" + gce_domain + "/geoserver/ows";
         albersProj = 'EPSG:3005';
         webMercatorProj = 'EPSG:900913';
         // EPSG:3005
@@ -115,7 +117,7 @@ var maplib = ( function() {"use strict";
 
                 if (analysisData[i].hasOwnProperty("wfsName") && analysisData[i].hasOwnProperty("wfsProtocolParams") && analysisData[i].hasOwnProperty("wfsLayerParams")) {
                     // also now need to make sure that the data has not already been added to the map
-                    if (!layerExists(analysisData[i].hasOwnProperty("wfsName"))) {
+                    if (!layerExists(analysisData[i].wfsName)) {
                         console.log("creating protocol...");
                         protocol = new OpenLayers.Protocol.WFS(analysisData[i].wfsProtocolParams);
                         analysisData[i].wfsLayerParams.protocol = protocol;
@@ -257,7 +259,7 @@ var maplib = ( function() {"use strict";
          * 3) adds the intersected features to a new layer
          * 4) draws the new layer
          */
-        function calcIntersection(summaryColumn, features) {
+        function calcIntersection(srcLayer, summaryColumn, features) {
             // TODO: need to come back and add logic to make sure that we actually have a drawing feature to work with
             var i, jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers, intersectJSTSGeom, albersProjection, intersectFeature, webMercatorProj, curFeatureJSTSGeom, intersectGeom, sumObj, sumColumnValue, area, totalAreaInInterest;
             totalAreaInInterest = 0;
@@ -330,16 +332,66 @@ var maplib = ( function() {"use strict";
                 sumObj['undefinedArea'] = intersectFeature.geometry.getArea() - totalAreaInInterest;
             }
             console.log("finished!");
-            
-            
-            // in order to style things correctly need to retrieve the styling 
-            // used for the layer on the wms server.  Don't know quite how to do 
+
+            // in order to style things correctly need to retrieve the styling
+            // used for the layer on the wms server.  Don't know quite how to do
             // this through the openlayers interface, but it looks like
             // the following url will retrieve that file for a particular layer
-            // next step is to take what is retreived by that and parse it using 
+            // next step is to take what is retreived by that and parse it using
             // the parser.
+            MakeD3Report(srcLayer, sumObj);
+        }
+
+        function MakeD3Report(lyrName, areaReport) {
+            // step 1 define an xmlhttp request, and a handler.  The handler
+            // will then parse the
+            var sld, pieChart, styles;
+            sld = getSLD(lyrName);
+            styles = extractStylesFromSLD(sld, lyrName);
+            // can now make the report
             
-            
+
+        }
+
+        function extractStylesFromSLD(sld, lyrName) {
+            var rules, i, rule, columnValue, styles, defaultFill, defaultStroke;
+            styles = {};
+            rules = sld.namedLayers[lyrName].userStyles[0].rules;
+            // get the defaults
+            defaultFill = sld.namedLayers[lyrName].userStyles[0].defaultStyle.fillColor;
+            defaultStroke = sld.namedLayers[lyrName].userStyles[0].defaultStyle.strokeColor;
+            for ( i = 0; i < rules.length; i += 1) {
+                if (rules[i].hasOwnProperty('filter')) {
+                    columnValue = rules[i].filter.value;
+                    styles[columnValue] = {
+                        fillColor : defaultFill,
+                        strokeColor : defaultStroke
+                    };
+                    if (rules[i].hasOwnProperty('symbolizer')) {
+                        if (rules[i].symbolizer.hasOwnProperty('Polygon')) {
+                            if (rules[i].symbolizer.Polygon.hasOwnProperty('fillColor')) {
+                                //fill = rules[i].symbolizer.Polygon.fillColor;
+                                styles[columnValue].fillColor = rules[i].symbolizer.Polygon.fillColor;
+                            } else if (rules[i].symbolizer.Polygon.hasOwnProperty('strokeColor')) {
+                                //stroke = rules[i].symbolizer.Polygon.strokeColor;
+                                styles[columnValue].strokeColor = rules[i].symbolizer.Polygon.strokeColor;
+                            }
+                        }
+                    }
+                }
+            }
+            return styles;
+        }
+
+        function getSLD(lyrName) {
+            var sldFormat, request, sld;
+            request = OpenLayers.Request.GET({
+                url : gce_ows + '?service=WMS&version=1.1.1&request=GetStyles&layers=' + lyrName,
+                async : false
+            });
+            sldFormat = new OpenLayers.Format.SLD();
+            sld = sldFormat.read(request.responseXML || request.responseText);
+            return sld;
         }
 
         /**
@@ -481,7 +533,7 @@ var maplib = ( function() {"use strict";
             // now send the features to the intersection method
             analysisDataRec = getAnalysisDataRecordFromFeatureType(srcLayer);
 
-            calcIntersection(analysisDataRec.summaryColumn, response.features);
+            calcIntersection(srcLayer, analysisDataRec.summaryColumn, response.features);
         }
 
         function getAnalysisDataRecordFromFeatureType(layerName) {
@@ -520,11 +572,10 @@ var maplib = ( function() {"use strict";
             // get the information underneath the drawn polygon with a
             // wfs query in a web worker
             // A) define a filter
-            //addCumEffects_WFS();
             var i, junk, drawingGeom, spatialFilterParams, filter_spatial, compObj, filter_conditional, allfilters, filterComb, dataDict, atribFilter, filters, finalFilter, layers;
             filters = [];
             addAnalysisData();
-            test_adddummyPolygon();
+            //test_adddummyPolygon();
             drawingGeom = drawingLayer.features[0].geometry;
             console.log("drawinglayer geom is:" + drawingGeom);
 

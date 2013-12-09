@@ -79,35 +79,80 @@
                 sld = sldFormat.read(request.responseXML || request.responseText);
                 console.log("sld:" + sld);
                 printObject(sld, 1);
-                // so at this point have the sld, the next step is to 
+                extractStyles(sld, 'mule_deer');
+                // so at this point have the sld, the next step is to
                 // extract the color values.
-                // might also consider using the same column that is used 
+                // might also consider using the same column that is used
                 // for the styling for the analysis.
                 // this example shows how to read the sld:
                 // http://openlayers.org/dev/examples/sld.js
-                
-                // after I figure out how to parse it, then we can use the 
+
+                // after I figure out how to parse it, then we can use the
                 // values to create the chart using D3.
             }
-            
+
             function printObject(obj, indent) {
-                // super handy method, don't want to lose this. Useful for debugging 
+                // super handy method, don't want to lose this. Useful for debugging
                 // and figuring out stuff.
-                var keys, i, key, value, spaces;
+                var keys, i, key, value, spaces, spacesInIndent, isObj, bracketStart, bracketEnd;
+                spacesInIndent = 4;
+                bracketStart = '{';
+                bracketEnd = '}';
+
+                isObj = false;
                 //console.log(typeof indent);
                 spaces = Array(indent).join(' ');
                 //console.log("spaces: " + spaces);
                 keys = Object.keys(obj);
-                for (i=0; i<keys.length; i+=1) {
+                for ( i = 0; i < keys.length; i += 1) {
                     key = keys[i];
                     value = obj[key];
-                    if ((typeof value).toString() === 'object') {
-                        indent = indent + 2;
+                    if (( typeof value).toString() === 'object') {
+                        if (Object.prototype.toString.call(value) === '[object Array]') {
+                            bracketStart = '[';
+                            bracketEnd = ']';
+                        }
+                        console.log(spaces + key + ' : ' + bracketStart);
+                        indent = indent + spacesInIndent;
                         printObject(value, indent);
+                        isObj = true;
                     } else {
                         console.log(spaces + key + ' : ' + value);
                     }
                 }
+                if (isObj) {
+                    indent = indent - spacesInIndent;
+                    spaces = Array(indent).join(' ');
+                    console.log(spaces + bracketEnd);
+                }
+            }
+
+            function extractStyles(sld, lyrName) {
+                var rules, i, rule, columnValue, styles;
+                styles = {}
+                rules = sld.namedLayers['mule_deer'].userStyles[0].rules;
+                // get the defaults
+                defaultFill = sld.namedLayers['mule_deer'].userStyles[0].defaultStyle.fillColor;
+                defaultStroke = sld.namedLayers['mule_deer'].userStyles[0].defaultStyle.strokeColor;
+                for ( i = 0; i < rules.length; i += 1) {
+                    if (rules[i].hasOwnProperty('filter')) {
+                        columnValue = rules[i].filter.value;
+                        styles[columnValue] = {fillColor: defaultFill, strokeColor: defaultStroke};
+                        
+                        if (rules[i].hasOwnProperty('symbolizer')) {
+                            if (rules[i].symbolizer.hasOwnProperty('Polygon')) {
+                                if (rules[i].symbolizer.Polygon.hasOwnProperty('fillColor')) {
+                                    //fill = rules[i].symbolizer.Polygon.fillColor;
+                                    styles[columnValue].fillColor = rules[i].symbolizer.Polygon.fillColor;
+                                } else if (rules[i].symbolizer.Polygon.hasOwnProperty('strokeColor')) {
+                                    //stroke = rules[i].symbolizer.Polygon.strokeColor;
+                                    styles[columnValue].strokeColor = rules[i].symbolizer.Polygon.strokeColor;
+                                }
+                            }
+                        }
+                    }
+                }
+                return styles;
             }
 
         </script>
