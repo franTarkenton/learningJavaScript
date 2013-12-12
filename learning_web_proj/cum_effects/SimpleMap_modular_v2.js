@@ -125,8 +125,8 @@ var maplib = ( function() {"use strict";
                         lyr = new OpenLayers.Layer.Vector(analysisData[i].wfsName, analysisData[i].wfsLayerParams);
                         lyr.displayInLayerSwitcher = false;
                         console.log("adding layer to map ..");
-                        map.addLayer(lyr);
-                    }
+                        lyr.display(false);
+                        map.addLayer(lyr);                    }
                 }
             }
             console.log("analysis data has been added");

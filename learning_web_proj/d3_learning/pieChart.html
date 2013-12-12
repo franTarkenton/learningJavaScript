@@ -15,11 +15,33 @@
     <script>
         var width = 960, height = 500, radius = Math.min(width, height) / 2;
 
+        var muleDeer = [{
+            risk : 'Moderate',
+            area : 23422,
+            color : 'FFC98F'
+        }, {
+            risk : 'High',
+            area : 61231,
+            color : 'FF2D12'
+        }, {
+            risk : 'Low',
+            area : 5820,
+            color : 'FFC98F'
+        }];
+
         var color = d3.scale.ordinal().range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
 
         var arc = d3.svg.arc().outerRadius(radius - 10).innerRadius(0);
-
-        var pie = d3.layout.pie().sort(null).value(function(d) {
+        var accumVal = 0;
+        var pie = d3.layout.pie().sort(null).value(function(d, i) {
+            console.log("d: " + d);
+            console.log("i: " + i);
+            console.log("d[i] " + d[i]);
+            console.log("keys: " + Object.keys(d));
+            console.log("data: " + d.__data__);
+            accumVal = d.population + accumVal;
+            console.log("d.population" + d.population)
+            console.log("sum val: " + accumVal);
             return d.population;
         });
 
@@ -39,7 +61,8 @@
 
             g.append("text").attr("transform", function(d) {
                 return "translate(" + arc.centroid(d) + ")";
-            }).attr("dy", ".35em").style("text-anchor", "middle").text(function(d) {
+            }).attr("dy", ".35em").style("text-anchor", "middle").text(function(d, i) {
+                
                 return d.data.age;
             });
 

@@ -21,39 +21,60 @@
     </p>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script>
-        var muleDeer = {
-            'Moderate' : 23422,
-            'High' : 61231,
-            'Low' : 5820
-        };
-
-        total = 23422 + 61231 + 5820;
-        console.log('total: ' + total);
-
-        var styles = {
-            'Moderate' : 'FFC98F',
-            'Low' : '#DBE88D',
-            'High' : 'FF2D12'
-        };
+        var muleDeer = [{
+            risk : 'Moderate',
+            area : 23422,
+            color : 'FF9254'
+        }, {
+            risk : 'High',
+            area : 61231,
+            color : 'FF2D12'
+        }, {
+            risk : 'Low',
+            area : 5820,
+            color : 'FFC98F'
+        }];
 
         var width = 960, height = 500, radius = Math.min(width, height) / 2;
-
-        var cScale = d3.scale.linear().domain([0, 90473]).range([0, 2 * Math.PI]);
-
-        data = [[0, 5820, "#AA8888"], [5820, 61231 + 5820, "#88BB88"], [61231 + 5820, 90473 , "#8888CC"]]
+        var totalArea = 0;
         
-        var dataFunc = function()
+        var max = d3.max(muleDeer, function(d) {
+            totalArea = totalArea + d.area;
+            console.log("TOTALAREA: " + totalArea);
+            return totalArea;
+        });
+        
+        // var min = d3.min(muleDeer, function(d) {
+            // console.log("minfunc: d.area: " + d.area)
+            // return d.area;
+        // });
+        
+        var sum = d3.sum(muleDeer, function(d) {
+            return d.area;
+        });
+        
+        var scale = d3.scale.linear()
+                     .domain([0, sum])
+                     .range([[0, 2 * Math.PI]]);
+                     
+                     
+        //var cScale = d3.scale.linear().domain([0, 90473]).range([0, 2 * Math.PI]);
 
+        //data = [[0, 5820, "#AA8888"], [5820, 61231 + 5820, "#88BB88"], [61231 + 5820, 90473, "#8888CC"]];
+
+
+        
         var vis = d3.select("#svg_donut");
 
         var arc = d3.svg.arc().innerRadius(50).outerRadius(100).startAngle(function(d) {
-            return cScale(d[0]);
+            return scale(d.area);
         }).endAngle(function(d) {
-            return cScale(d[1]);
+            return scale(d.area);
         });
 
-        vis.selectAll("path").data(data).enter().append("path").attr("d", arc).style("fill", function(d) {
-            return d[2];
+        vis.selectAll("path").data(muleDeer).enter().append("path").attr("d.area", arc).style("fill", function(d) {
+            console.log("here");
+            return d.area;
         }).attr("transform", "translate(300,200)");
 
         //var arc = d3.svg.arc().outerRadius(radius - 10).innerRadius(0);

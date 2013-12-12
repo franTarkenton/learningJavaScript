@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+	body {
+		font: 10px sans-serif;
+	}
+
+	.arc path {
+		stroke: #fff;
+	}
+
+</style>
+<body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+        var muleDeer = [{
+            risk : 'Moderate',
+            area : 23422,
+            color : 'FF9254'
+        }, {
+            risk : 'High',
+            area : 61231,
+            color : 'FF2D12'
+        }, {
+            risk : 'Low',
+            area : 5820,
+            color : 'FFC98F'
+        }];
+        // params
+        var width = 960, height = 500, radius = Math.min(width, height) / 2;
+
+        // scales
+        var angleScale = d3.scale.linear().domain([0, d3.sum(muleDeer, function(d) {
+            return d.area
+        })]).range([0, 1 * Math.PI]);
+        var radianOffSet = 90 * (Math.PI / 180);
+        var radiusScale = d3.scale.linear().domain([0, muleDeer.length]).range([40, 100]);
+
+        // misc funcs
+        function centerTranslation() {
+            return 'translate(' + r + ',' + r + ')';
+        }
+
+        // svg
+        var vis = d3.select("body").append("svg").attr("width", 600).attr("height", 400).attr("id", "svg_donut").attr("class", 'gauge');
+
+        var arcs = vis.append('g').attr("class", 'arc').attr('transform', centerTranslation);
+
+        arcs.selectAll('path').data(muleDeer).enter().append('path').attr('fill', function(d, i) {
+            return d.color;
+        }).attr('d', arc);
+        
+        var lg = vis.append('g').attr('class', 'label').attr("transform", centerTranslation);
+        
+        
+        
+
+        var arc = d3.svg.arc().innerRadius(function(d, i) {
+            val = 0;
+            if (i !== 0) {
+                val = radiusScale(muleDeer[i - 1].area);
+            }
+            return radiusScale(i) + 1;
+        }).outerRadius(function(d, i) {
+            return radiusScale(i + 1) - 1;
+        }).startAngle(function(d, i) {
+            return 0 - radianOffSet;
+        }).endAngle(function(d, i) {
+
+            console.log("end data: " + val);
+            console.log("rads:" + angleScale(d.area));
+            return angleScale(d.area) - radianOffSet;
+        });
+
+        vis.selectAll("path").data(muleDeer).enter().append("path").attr("id", function(d, i) {
+            return "s" + i;
+        }).attr("d", arc).style("fill", function(d) {
+            return d.color;
+        }).attr("transform", "translate(150,150)");
+        ;
+
+        // now trying to add text to the diagram:
+
+    </script>
