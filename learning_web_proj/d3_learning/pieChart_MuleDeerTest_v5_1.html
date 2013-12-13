@@ -36,6 +36,8 @@
         var radianOffSet = 90 * (Math.PI / 180);
         var radiusScale = d3.scale.linear().domain([0, muleDeer.length]).range([40, 100]);
 
+
+r = 200;
         // misc funcs
         function centerTranslation() {
             return 'translate(' + r + ',' + r + ')';
@@ -52,7 +54,15 @@
         
         var lg = vis.append('g').attr('class', 'label').attr("transform", centerTranslation);
         
-        
+        lg.selectAll('text')
+				.data(muleDeer)
+			.enter().append('text')
+				.attr('transform', function(d) {
+					var ratio = scale(d);
+					var newAngle = config.minAngle + (ratio * range);
+					return 'rotate(' +newAngle +') translate(0,' +(config.labelInset - r) +')';
+				})
+				.text(config.labelFormat);
         
 
         var arc = d3.svg.arc().innerRadius(function(d, i) {

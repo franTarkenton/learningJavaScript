@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+	body {
+		font: 10px sans-serif;
+	}
+
+	.arc path {
+		stroke: #fff;
+	}
+	
+	text.shadow {
+    stroke: white;
+    stroke-width: .6px;
+    opacity: 0.9;
+}
+
+</style>
+<body>
+	<!-- <svg id="svg_donut" width="600" height="400"></svg> -->
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script>
+		var muleDeer = [{
+			risk : 'Moderate',
+			area : 23422,
+			color : 'FF9254'
+		}, {
+			risk : 'High',
+			area : 61231,
+			color : 'FF2D12'
+		}, {
+			risk : 'Low',
+			area : 5820,
+			color : 'FFC98F'
+		}];
+		
+		
+		// need a function that calculates the max scale, adds up all the values 
+		// and then does a round to the nearest 10% or something like that.  The 
+		// sum of all the values above comes to something like 92,000.  The rounding
+		// should probably always go up.
+		// for now will use 1-100,000
+		
+		
+		var svg = d3.select("body").append("svg");
+		var pi = Math.PI;
+		var width = 960, height = 500, radius = Math.min(width, height) / 2;
+        // TODO: the 100,000 will be calculated by 
+		var angleScale = d3.scale.linear().domain([0, 100000]).range([0, 1 * Math.PI]);
+
+		var radianOffSet = 90 * (Math.PI / 180);
+
+		var radiusScale = d3.scale.linear().domain([0, muleDeer.length + 1]).range([40, 100]);
+
+		data = [[0, 50, "#AA8888"], [50, 75, "#88BB88"], [75, 100, "#8888CC"]];
+
+		// var vis = d3.select("#svg_donut");
+		
+		// create an invisible arc that sits behind all the other arcs, but is used to attach
+		// text to.
+		var hiddenarc = d3.svg.arc().innerRadius(function(d, i) {
+			val = 0;
+			if (i !== 0) {
+				val = radiusScale(muleDeer[i - 1].area);
+			}
+			return radiusScale(i) + 1;
+		}).outerRadius(function(d, i) {
+			return radiusScale(i + 1) - 1;
+		}).startAngle(function(d, i) {
+			return 0 - radianOffSet;
+		}).endAngle(function(d, i) {
+			return 0 + radianOffSet;
+		});
+
+		var arc = d3.svg.arc().innerRadius(function(d, i) {
+			val = 0;
+			if (i !== 0) {
+				val = radiusScale(muleDeer[i - 1].area);
+			}
+			return radiusScale(i) + 1;
+		}).outerRadius(function(d, i) {
+			return radiusScale(i + 1) - 1;
+		}).startAngle(function(d, i) {
+			return 0 - radianOffSet;
+		}).endAngle(function(d, i) {
+			console.log("end data: " + val);
+			console.log("rads:" + angleScale(d.area));
+			return angleScale(d.area) - radianOffSet;
+		});
+		
+		// now add a group for the visible arcs
+		visibleArcs = svg.append('g');
+		hiddenArcs = svg.append('g');
+		textBlack = svg.append('g');
+		ticsGroup = svg.append('g');
+
+		visibleArcs.selectAll("path").data(muleDeer).enter().append("path").attr("d", arc).attr("id", function(d, i) {
+			return 's' + i;
+		}).style("fill", function(d) {
+			return d.color;
+		}).attr("transform", "translate(300,200)");
+
+		hiddenArcs.selectAll("path").data(muleDeer).enter().append("path").attr('d', hiddenarc).attr("id", function(d,i) {
+			return 'lab' + i;
+		}).style("opacity", 0.0).attr("transform", "translate(300,200)");
+		
+		//noformat 
+		var blackText = textBlack.selectAll('text')
+							.data(muleDeer)
+							.enter()
+							.append('text')
+							.attr("x", 12)
+							.attr("dy", 12).attr('class', 'shadow');
+		// TODO: set up a scale to scale the text according
+        blackText.append("textPath")
+        	.attr('text-anchor', 'left')
+        	.style("font-size", '15px')
+        	.style("font-weight", 'bold')
+        	.style("font-family", 'arial')
+        	.attr("xlink:href", function(d, i) { return "#lab" + i;})
+        	.text(function(d) { return d.risk;});
+		
+		
+		scaleData = [10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000];
+		var ticks = ticsGroup.selectAll("line").data(muleDeer).enter().append("line");
+		ticks.attr("x1", 0)
+		.attr("x2", 0)
+		.attr("y1", -radius+4)
+		.attr("y2", -radius-2)
+		.attr("stroke", "gray")
+		.attr("transform", "translate(300,200)");
+		// .attr("transform", function(d) {
+		  // return "rotate(" + (d.startAngle+d.endAngle)/2 * (180/Math.PI) + ")";
+		// });
+
+	</script>
