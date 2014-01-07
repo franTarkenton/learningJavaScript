@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+	body {
+		font: 10px sans-serif;
+	}
+
+	.arc path {
+		stroke: #fff;
+	}
+	
+	text.shadow {
+    stroke: white;
+    stroke-width: .5px;
+    opacity: 0.9;
+}
+
+</style>
+<body>
+	<!-- <svg id="svg_donut" width="600" height="400"></svg> -->
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<script>
+		var muleDeer = [{
+			risk : 'Moderate',
+			area : 23422,
+			color : '#FF9254'
+		}, {
+			risk : 'High',
+			area : 61231,
+			color : '#FF2D12'
+		}, {
+			risk : 'Low',
+			area : 5820,
+			color : '#FFC98F'
+		}];
+		
+		
+		// need a function that calculates the max scale, adds up all the values 
+		// and then does a round to the nearest 10% or something like that.  The 
+		// sum of all the values above comes to something like 92,000.  The rounding
+		// should probably always go up.
+		// for now will use 1-100,000
+		
+		var width = 600, height = 400, radius = Math.min(width, height) / 2;
+		var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+		
+		var pi = Math.PI;
+        // TODO: the 100,000 will be calculated by 
+		var angleScale = d3.scale.linear().domain([0, 100000]).range([0, 1 * Math.PI]);
+
+		var radianOffSet = 90 * (Math.PI / 180);
+
+		var radiusScale = d3.scale.linear().domain([0, muleDeer.length ]).range([20, 75]);
+		var raduysScaleTics = d3.scale.linear().domain([0, muleDeer.length ]).range([80, 90]);
+		var raduysScaleTicText = d3.scale.linear().domain([0, muleDeer.length ]).range([90, 100]);
+
+		data = [[0, 50, "#AA8888"], [50, 75, "#88BB88"], [75, 100, "#8888CC"]];
+
+		// var vis = d3.select("#svg_donut");
+		
+		// create an invisible arc that sits behind all the other arcs, but is used to attach
+		// text to.  This arc will have different values than the data allowing the text to span 
+		// the full 180 degrees if necessary.
+		var hiddenarc = d3.svg.arc().innerRadius(function(d, i) {
+			val = 0;
+			if (i !== 0) {
+				val = radiusScale(muleDeer[i - 1].area);
+			}
+			return radiusScale(i) + 1;
+		}).outerRadius(function(d, i) {
+			return radiusScale(i + 1) - 1;
+		}).startAngle(function(d, i) {
+			return 0 - radianOffSet;
+		}).endAngle(function(d, i) {
+			return 0 + radianOffSet;
+		});
+		
+        // sets up properties for the arcs like: innerradius, outerradius, start and end angles. used to draw the actual arcs
+        // representing the data.
+		var arc = d3.svg.arc().innerRadius(function(d, i) {
+			val = 0;
+			if (i !== 0) {
+				val = radiusScale(muleDeer[i - 1].area);
+			}
+			return radiusScale(i) + 1;
+		}).outerRadius(function(d, i) {
+		    console.log("i is: " + i);
+		    console.log("label: " + d.risk);
+			return radiusScale(i + 1) - 1;
+		}).startAngle(function(d, i) {
+			return 0 - radianOffSet;
+		}).endAngle(function(d, i) {
+			console.log("end data: " + val);
+			console.log("rads:" + angleScale(d.area));
+			return angleScale(d.area) - radianOffSet;
+		});
+		
+		// now add a group for the visible arcs
+		visibleArcs = svg.append('g');
+		hiddenArcs = svg.append('g');
+		textBlack = svg.append('g');
+		ticsGroup = svg.append('g');
+		
+		ticTextGroup = svg.append('g');
+		ticTextArc = svg.append('g');
+		ticTextPath = svg.append('g');
+		
+		ticUnitsTextPathGroup = svg.append('g');
+		ticUnitsTextGroup = svg.append('g');
+        
+        // drawing the arcs 
+		visibleArcs
+		    .selectAll("path")
+		    .data(muleDeer)
+		    .enter()
+		    .append("path")
+		    .attr("d", arc)
+		    .attr("id", function(d, i) {
+		        //return 's' + i;
+		        return i;
+		    })
+		    .style("fill", function(d) {
+		        return d.color;
+		    }).attr("transform", "translate(300,200)");
+
+		hiddenArcs.selectAll("path")
+		    .data(muleDeer)
+		    .enter()
+		    .append("path")
+		    .attr('d', hiddenarc)
+		    .attr("id", function(d,i) {
+			    return 'lab' + i;
+		    })
+		    .style("opacity", 0.0)
+		    .attr("transform", "translate(300,200)");
+		
+		//noformat - I think the x and dy are a cludge and can likely be handled differently.  Leaving as is while figur other things out.
+		var blackText = textBlack.selectAll('text')
+							.data(muleDeer)
+							.enter()
+							.append('text')
+							.attr("x", 9)
+							.attr("dy", 9)
+							.attr('class', 'shadow');
+							
+		// TODO: set up a scale to scale the text according
+        blackText.append("textPath")
+        	.attr('text-anchor', 'left')
+        	.style("font-size", '13px')
+        	.style("font-weight", 'bold')
+        	.style("font-family", 'Verdana')
+        	.attr("xlink:href", function(d, i) { return "#lab" + i;}) 
+        	.text(function(d) {
+        	     return d.risk;
+        	});
+        	// xlink is a trick used to position text along an svg element.
+		
+		var scaleData = [0, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000];
+		offset = 1;
+		// This is the arc that is used for drawing the tics
+        var ticsArc = d3.svg.arc()
+            .innerRadius(20)
+            .outerRadius(90)
+            .startAngle(function(d, i) {
+                //return 0 - radianOffSet;
+                var retVal = angleScale(d - offset) - radianOffSet;
+                console.log("startAngle: " + retVal + ' ' + d);
+                return retVal;
+            })
+            .endAngle(function(d, i) {
+                //return 0 + radianOffSet;
+                var retVal = angleScale(d + offset) - radianOffSet;
+                console.log("endAngle: " + retVal + ' '  + d);
+                return retVal
+            });
+		var ticks = ticsGroup.selectAll("path")
+		                .data(scaleData)
+		                .enter()
+		                .append("path")
+		                .attr("d", ticsArc)
+		                .attr("stroke", '#595859')
+		                .attr("stroke-width", '.1')
+		                .attr("transform", "translate(300,200)");
+        
+        // steps for tic text
+        // a define a arc along which the text will be drawn
+        // append svg path element for the "d" attribute assign the arc defined in previous step
+        
+        textOffset = 3000;
+        // A) define the arc
+        var ticTextArc = d3.svg.arc()
+            .innerRadius(85)
+            .outerRadius(100)
+            .startAngle(function(d, i) {
+                //return 0 - radianOffSet;
+                var startAngle = 0
+                //if (i !== 0) {
+                    startAngle = angleScale(scaleData[i] - textOffset) - radianOffSet;
+                //}
+                console.log("startAngle: " + startAngle);
+                return startAngle;
+            })
+            .endAngle(function(d, i) {
+                return angleScale(scaleData[i] + textOffset) - radianOffSet;
+            });
+            
+            // see hiddenArcs
+        
+        // B) create a path with the text elements in it
+        ticTextPath.selectAll("path")
+            .data(scaleData)
+            .enter()
+            .append("path")
+            .attr('d', ticTextArc)
+            .attr("id", function(d,i) {
+                return 'scaleText' + i;
+            })
+            .style("opacity", 0.0)
+            .attr("transform", "translate(300,200)");
+            
+        var ticText = ticTextGroup.selectAll("text")
+                          .data(scaleData)
+                          .enter()
+                          .append("text")
+                          .attr("x", '.5%');
+                          //.attr('dy', 0)
+                          //.attr('class', 'shadow');
+        
+        ticText.append("textPath")
+            //.attr('text-anchor', 'middle')
+            .style("font-size", '12px')
+            .style("font-weight", 'bold')
+            .style("font-family", 'Verdana')
+            .attr("xlink:href", function(d, i) { return "#scaleText" + i;}) 
+            .text(function(d) { return d / 10000;});
+            
+       // now for the units:
+       unitData = [ '(hectares)'];
+       // A) Arc For the text
+       var ticUnitsTextArc = d3.svg.arc()
+            .innerRadius(75)
+            .outerRadius(90)
+            .startAngle( angleScale(scaleData[0]) - radianOffSet)
+            .endAngle( angleScale(scaleData[scaleData.length - 1]) - radianOffSet);
+       
+       // B) path for the text to follow Done!
+        ticUnitsTextPathGroup.selectAll("path")
+            .data(unitData)
+            .enter()
+            .append("path")
+            .attr('d', ticUnitsTextArc)
+            .attr("id", function(d,i) {
+                return 'unitText' + i;
+            })
+            .style("opacity", 0.0)
+            .attr("transform", "translate(300,200)");
+            
+       // C) create the actual text elements
+       var ticUnitsText = ticUnitsTextGroup.selectAll("text")
+                         .data(unitData)
+                         .enter()
+                         .append("text");
+                         //.attr('class', 'shadow');
+                         
+       // D) create the textpath that links the text to the path
+       ticUnitsText.append("textPath")
+            .attr('text-anchor', 'middle')
+            .attr("startOffset", '25%')
+            .style("font-size", '8px')
+            .style("font-style", 'italic')
+            .style("font-family", 'Verdana')
+            .attr("xlink:href", function(d, i) { return "#unitText" + i;}) 
+            .text(function(d) { return d });       
+       
+                                  
+                                  
+                         
+
+
+        
+	</script>
+</body>
