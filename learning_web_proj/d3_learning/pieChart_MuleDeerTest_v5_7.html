@@ -40,7 +40,34 @@
             units: 'm'
         }
         
+        var visualData = [{
+            label : 'Preservation',
+            area : 55234,
+            color : '#B4FFB0'
+        }, {
+            label : 'Retained',
+            area : 79691,
+            color : '#A0E6E8'
+        }, {
+            label : 'Modified',
+            area : 10752,
+            color : '#BEBDFF'
+        }, 
+        {
+            label : 'Max. Modified',
+            area : 18093,
+            color : '#E855DC'
+        }];
+        
+        var visualDataConfig = {
+            label: 'Visual Quality Objective', 
+            units: 'm'
+        }
+
+        
 		pieChart.addData(muleDeerData, muleDeerConfig);
-		pieChart.createChart(400, 'chartsHere')
+		pieChart.addData(visualData, visualDataConfig);
+
+		pieChart.createCharts(400, 'chartsHere')
 	</script>
 </body>

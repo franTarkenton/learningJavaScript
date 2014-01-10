@@ -1,17 +1,29 @@
+/**
+ * @module pieChart
+ * 
+ * Used to report out on map polygon selections.  Idea is in 
+ * the mapping component the user will select an area of interest, 
+ * The mapping widget will construct a series of data strucutres that 
+ * can be passes to this module to be visualized.
+ * 
+ * In the end the visualization will show charts for selected polygons
+ * as well as summary statistics about the polygon that was used to 
+ * select the polygons.
+ */
+
 var pieChart = (
     function() {"use strict";
 
-        var pieChrt, angleScale, svg, pi, i, radianOffSet, numColumns, svgWidth, 
+        var pieChrt, angleScale, svg, pi, i, radianOffSet, svgWidth, 
             svgHeight, minimumChartSize, spaceBetween, chartWidth, chartHeight,
-            dataRadiusScale, minChrtWidth, minChrtHeight, percent2WidthDim, 
-            percent2HeightDim, ;
+            dataRadiusScale, minChrtDims,  percent2WidthDim, 
+            percent2HeightDim, numCols, numRows ;
         pieChrt = {}; // namespace
         pieChrt.chartDataSets = []; // populated with an array of data sets.  Each element in this array  represents a chart to be drawn
         pieChrt.chartConfigs = []; // populated with an array of config parameters
-        numColumns = 2;  // identifies how many charts to draw in the width provided for the svg
-        minChrtWidth = 150;
-        minChrtHeight = 125;
+        minChrtDims = 150;
         spaceBetween = 5;
+        
         
         
         
@@ -21,21 +33,61 @@ var pieChart = (
          * chartWidth and chartHeight variables
          */
         function defineChartSize() {
-            var numCols, whitespace; 
+            var  whitespace; 
             console.log("width is: " + svgWidth);
             // Can't forsee a situation where we would have more than 10 charts per column. 
             // norm is likely 2 - 4.
-            numCols = Math.floor(svgWidth / minChrtWidth);
+            numCols = Math.floor(svgWidth / minChrtDims); // 2
             // space between each column and chart
             whitespace = spaceBetween * (numCols + 1);
-            chartWidth = (svgWidth - whitespace) / numCols;
+            console.log("whitespace: " + whitespace);
+            chartWidth = Math.floor((svgWidth - whitespace) / numCols);
             
-            if (numCols < pieChrt.chartDataSets.length) {
-                svgHeight = minChrtHeight + (2 * spaceBetween);
+            // numRows = (minChrtDims * Math.ceil(pieChrt.chartDataSets.length / numCols));
+            numRows = Math.ceil(pieChrt.chartDataSets.length / numCols);
+            console.log("numRows: " + numRows);
+            console.log("numCols" + numCols);
+            
+            // svg height should be at whatever the chartWidth is * the number of rows 
+            // required
+            if (numCols > pieChrt.chartDataSets.length) {
+                //svgHeight = minChrtHeight + (2 * spaceBetween);
+                svgHeight = chartWidth
             } else {
-                svgHeight = (minChrtHeight * Math.ceil(pieChrt.chartDataSets.length / numColumns)) + (2 * spaceBetween);
+                //svgHeight = (minChrtHeight * Math.ceil(pieChrt.chartDataSets.length / numCols)) + (2 * spaceBetween);
+                svgHeight = numRows * chartWidth;
             }
-            chartHeight = minChrtHeight;
+            //console.log("svg height is: " + svgHeight);
+            // easiest to keep the charts a square, so...
+            chartHeight = chartWidth + 0;
+        }
+        
+        /**
+         * gets a count indicating what chart is being draw.  Ie is it the first second
+         * third etc.  Based on that value and the number of rows and columns to be drawn 
+         * calculates offset coordinates as to where the chart should go. 
+         */
+        function getChartLocation(chartCnt) {
+            var rowCnt, colCnt, offsets;
+            // chartCnt is an array index so adding 1.
+            chartCnt += 1
+            rowCnt = Math.ceil(chartCnt / numCols);
+            if (chartCnt <= numCols) {
+                colCnt = chartCnt;
+            } else {
+                colCnt = chartCnt%numCols;
+                if (colCnt === 0) {
+                    colCnt = 1;
+                } else {
+                    colCnt = colCnt + 1;
+                }
+            }
+            offsets = {};
+            offsets.x = colCnt * chartWidth;
+            offsets.y = rowCnt * chartHeight;
+            console.log("x: " + offsets.x);
+            console.log("y: " + offsets.y);
+            return offsets;
         }
         
         /**
@@ -47,7 +99,8 @@ var pieChart = (
         function configureScaleFunctions(data) {
             var max, maxDomain;
             // Step 1, calculate the domain of the data.
-            console.log("here");
+            console.log("chartHeight: " + chartHeight);
+            console.log("chartWidth: " + chartWidth);
             var max = d3.max(data, function(d, i) {
                 return d.area;
             });
@@ -67,13 +120,12 @@ var pieChart = (
 
             //  2c. radius scale, used to calculate minium and maxium raduses for arcs
             //       input values are percentages.
-            dataRadiusScale = d3.scale.linear().domain([0, data.length ]).range([percent2WidthDim(20), percent2WidthDim(70)]);
-            
+            dataRadiusScale = d3.scale.linear().domain([0, data.length ]).range([percent2WidthDim(15), percent2HeightDim(70)]);
+            //dataRadiusScale = d3.scale.linear().domain([0, data.length ]).range([20, 100]);
             
             console.log('100 width:' + percent2WidthDim(100));
             console.log('100 height' + percent2HeightDim(100));
-            console.log('100 radius ' + dataRadiusScale(100))
-            
+            console.log('100 radius ' + dataRadiusScale(3))
         }
         
         /**
@@ -118,19 +170,82 @@ var pieChart = (
             return arc;
         }
         
+        /**
+         * creates an invisible arc upon which the labelling can be placed 
+         *  
+         */
+        function defineLabelArc(data) {
+            var arc, d, i, val;
+            arc = d3.svg.arc().innerRadius(function(d, i) {
+                          val = 0;
+                          if (i !== 0) {
+                              val = dataRadiusScale(data[i - 1].area);
+                          }
+                          return dataRadiusScale(i) + 1;
+                      }).outerRadius(function(d, i) {
+                          return dataRadiusScale(i + 1) - 1;
+                      }).startAngle(function(d, i) {
+                          return 0 - radianOffSet;
+                      }).endAngle(function(d, i) {
+                          return 0 + radianOffSet;
+                      });
+            return arc;
+        }
+        
+        
+        /**
+         * @param {Object[]} data
+         * @param {String} data.label - The value that will be used to label the axis
+         * @param {number} data.area - Contains the area that will be represented in the chart
+         * @param {String} data.color - Hexidecimal number representing the color to be used to draw the value
+         * 
+         * @param {Object} arc - a d3 svg arc that is used to define a path along which the data will be 
+         *                       shaded.
+         * @param {Object} grpElem - A d3 grouped element that the arcs of data will be added to.  The arc object
+         *                           defines the path, this element is a grouped element that will get created by
+         *                           d3.  It will have the arcs that are used to visualize the data.
+         * @param {Object} offsets
+         * @param {number} offsets.x - The number of units from the x axis that coordinates should be
+         *                                   shifted in order to draw this element in the correct 
+         *                                   location.
+         * @param {number} offsets.y - Ditto as above but for Y.
+         */
+        function drawDataArc(data, arc, grpElem, offsets) {
+            grpElem.selectAll('path')
+                .data(data)
+                .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('id', function(d, i) {
+                    return i;
+                })
+                .style('fill', function(d) {
+                    return d.color;
+                })
+                .attr("transform", 'translate('+ offsets.x +', '+ offsets.y +')'); // 300, 200
+                //.attr("transform", 'translate('+ chartWidth +', '+ chartHeight +')'); // 300, 200
+        }
+        
+        function drawLabelDataArc(data, arc, dataLabelArc, offsets) {
+            // start by drawing the hidden arc
+            dataLabelArc.selectAll('path')
+                .data(data)
+                .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('id', function(d, i) {
+                    return 'lab' + i;
+                })
+                .style("opacity", 0.5) // needs to be edited after debugging
+                .attr('transform', 'translate('+ offsets.x + ',' + offsets.y + ')');
+        }
+        
         function defineGroupedElements() {
-            dataArc = svg.append('g');
-            textArc = svg.append('g');
-            majorTicsArc = svg.append('g');
-            minorTicsArc = svg.append('g');
-            labelsGroup = svg.append('g');
-            
-            ticTextGroup = svg.append('g');
-            ticTextArc = svg.append('g');
-            ticTextPath = svg.append('g');
-            
-            ticUnitsTextPathGroup = svg.append('g');
-            ticUnitsTextGroup = svg.append('g');
+            var groups = {};
+            groups.dataArcs = svg.append('g');
+            groups.textArc = svg.append('g');
+            groups.dataLabelArc = svg.append('g');
+            return groups;
         }
         
         /** 
@@ -141,9 +256,18 @@ var pieChart = (
          * @param {String} data.color - Hexidecimal number representing the color to be used to draw the value
          * 
          */
-        function drawChart(data) {
-            defineGroupedElements();
+        function drawChart(dataPosition) {
+            var data = pieChrt.chartDataSets[dataPosition];
+            var offsets = getChartLocation(dataPosition);
+            var groups = defineGroupedElements();
+            
+            // drawing the data
             var dataArc = defineDataArc(data);
+            drawDataArc(data, dataArc, groups.dataArcs, offsets);
+            
+            // labelling the data
+            var labelArc = defineLabelArc(data);
+            drawLabelDataArc(data, labelArc, groups.dataLabelArc, offsets);
             
             
         }
@@ -202,12 +326,15 @@ var pieChart = (
                 .append("svg")
                 .attr("width", svgWidth)
                 .attr("height", svgHeight);
+                
+            console.log("svg width:" + svgWidth);
+            console.log("svg height:" + svgHeight);
             
                 
             // Iterating over the data used to draw each chart.
             for (i=0; i<pieChrt.chartDataSets.length; i++) {
                 configureScaleFunctions(pieChrt.chartDataSets[i]);
-                drawChart(pieChrt.chartDataSets[i]);
+                drawChart(i);
             }
 
             
