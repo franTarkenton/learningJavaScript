@@ -102,16 +102,34 @@ var pieChart = (
          * assign the labels to. This method will calculate that data structure.
          */
         function calcDomainLabelValues(maxDomainValue) {
-            var incrementValue, numDivisions, curVal, domainValueArray;
+            var incrementValue, numDivisions, curVal, domainValueArray,
+                miniDomainArray, miniIncr, miniCurVal, miniNumDivs, 
+                domains;
             numDivisions = 10;
+            miniNumDivs = 10;
             curVal = 0;
             domainValueArray = [];
+            miniDomainArray = [];
+            
             incrementValue = maxDomainValue / numDivisions;
+            miniIncr = incrementValue / miniNumDivs;
+            miniCurVal = miniIncr;
             while (curVal <= maxDomainValue) {
                 domainValueArray.push(curVal);
                 curVal += incrementValue;
+                console.log('curVal: ' + curVal);
+                if (miniCurVal < maxDomainValue) {
+                    while (miniCurVal < curVal ) {
+                        miniDomainArray.push(miniCurVal);
+                        miniCurVal += miniIncr;                   
+                    }
+                    miniCurVal += miniIncr;
+                }
             }
-            return domainValueArray;
+            domains = {}
+            domains.bigIncr = domainValueArray;
+            domains.subIncr = miniDomainArray;
+            return domains;
         }
         
         /**
@@ -244,6 +262,36 @@ var pieChart = (
             return ticsArc;
         }
         
+        function defineGaugeLabelArc() {
+             var ticUnitsTextArc = d3.svg.arc()
+                .innerRadius(percent2WidthDim(75))
+                .outerRadius(percent2WidthDim(80))
+                .startAngle( angleScale(domainLabelValues.bigIncr[0]) - radianOffSet)
+                .endAngle( angleScale(domainLabelValues.bigIncr[domainLabelValues.bigIncr.length - 1]) - radianOffSet);
+            return ticUnitsTextArc;
+        }
+        
+        function defineMiniTicksArc() {
+            var offset, retVal, ticsArc;
+            offset = 1;
+            ticsArc = d3.svg.arc()
+                .innerRadius(percent2WidthDim(72))
+                .outerRadius(percent2WidthDim(78))
+                .startAngle(function(d, i) {
+                    //return 0 - radianOffSet;
+                    retVal = angleScale(d - offset) - radianOffSet;
+                    console.log("startAngle: " + retVal + ' ' + d);
+                    return retVal;
+                })
+                .endAngle(function(d, i) {
+                    //return 0 + radianOffSet;
+                    var retVal = angleScale(d + offset) - radianOffSet;
+                    console.log("endAngle: " + retVal + ' '  + d);
+                    return retVal
+                });
+            return ticsArc;
+        }
+        
         function defineBigTicksLabelsArc() {
             var textOffset, startAngle, ticTextArc;
             // TODO: need to come back and calculate an appropriate text offset so it works always.
@@ -259,13 +307,13 @@ var pieChart = (
                         // TODO: domainLabelValues is likely not required as I think this data set 
                         // is going to get bound to this arc, therefor the variable d should work
                         // come back and check that!
-                        startAngle = angleScale(domainLabelValues[i] - textOffset) - radianOffSet;
+                        startAngle = angleScale(domainLabelValues.bigIncr[i] - textOffset) - radianOffSet;
                     //}
                     console.log("startAngle: " + startAngle);
                     return startAngle;
                 })
                 .endAngle(function(d, i) {
-                    return angleScale(domainLabelValues[i] + textOffset) - radianOffSet;
+                    return angleScale(domainLabelValues.bigIncr[i] + textOffset) - radianOffSet;
                 });
             return ticTextArc;
         }
@@ -360,10 +408,25 @@ var pieChart = (
             yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
 
             bigTics = groups.bigTics.selectAll('path')
-                .data(domainLabelValues)
+                .data(domainLabelValues.bigIncr)
                 .enter()
                 .append('path')
                 .attr('d', bigTicsArc)
+                .attr("stroke", '#595859')
+                .attr("stroke-width", '.1')
+                .attr("transform", "translate("+xOffset+" ,"+yOffset+")");
+        }
+        
+        function drawMiniTics(miniTicsArc, groups, chrtLoc) {
+            var miniTics, xOffset, yOffset, bigTics;
+            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
+            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
+
+            bigTics = groups.miniTics.selectAll('path')
+                .data(domainLabelValues.subIncr)
+                .enter()
+                .append('path')
+                .attr('d', miniTicsArc)
                 .attr("stroke", '#595859')
                 .attr("stroke-width", '.1')
                 .attr("transform", "translate("+xOffset+" ,"+yOffset+")");
@@ -376,7 +439,7 @@ var pieChart = (
             yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
 
             groups.bigTicsLabelsPath.selectAll("path")
-                .data(domainLabelValues)
+                .data(domainLabelValues.bigIncr)
                 .enter()
                 .append("path")
                 .attr('d', bigTicLabelsArc)
@@ -387,7 +450,7 @@ var pieChart = (
                 .attr("transform", "translate("+xOffset+","+yOffset+")");
             
             var ticText = groups.bigTicsLabelsText.selectAll("text")
-                .data(domainLabelValues)
+                .data(domainLabelValues.bigIncr)
                 .enter()
                 .append("text")
                 .attr("x", '.8%'); // should be the full width of 10% of the full radius
@@ -407,6 +470,39 @@ var pieChart = (
                 .text(function(d) { return d / 10000;});
         }
         
+        function drawGaugeLabelText(gaugeLabelArc, groups, chrtLoc, config, unitData) {
+            var xOffset, yOffset;
+            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
+            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
+            //unitData = [config.label];
+            
+            groups.gaugeLabelPaths.selectAll("path")
+                .data(unitData)
+                .enter()
+                .append("path")
+                .attr('d', gaugeLabelArc)
+                .attr("id", function(d,i) {
+                    return config.anchorPrefix + 'unitText' + i;
+                })
+                .style("opacity", 0.0)
+                .attr("transform", "translate("+xOffset+","+yOffset+")");
+                
+            var gaugeUnits = groups.gaugeUnitsText.selectAll("text")
+                .data(unitData)
+                .enter()
+                .append("text");
+                 //.attr('class', 'shadow');
+                 
+            gaugeUnits.append("textPath")
+                .attr('text-anchor', 'middle')
+                .attr("startOffset", '25%')
+                .style("font-size", '8px')
+                .style("font-style", 'italic')
+                .style("font-family", 'Verdana')
+                .attr("xlink:href", function(d, i) { return "#" + config.anchorPrefix + 'unitText' + i;}) 
+                .text(function(d) { return d });
+        }
+        
         function defineGroupedElements() {
             var groups = {};
             groups.dataArcs = svg.append('g');
@@ -416,6 +512,9 @@ var pieChart = (
             groups.bigTics = svg.append('g');
             groups.bigTicsLabelsPath = svg.append('g');
             groups.bigTicsLabelsText = svg.append('g');
+            groups.miniTics = svg.append('g');
+            groups.gaugeLabelPaths = svg.append('g');
+            groups.gaugeUnitsText = svg.append('g');
             return groups;
         }
         
@@ -448,6 +547,15 @@ var pieChart = (
             // Draw big tic labels
             var bigTicLabelsArc = defineBigTicksLabelsArc();
             drawBigTicLabels(bigTicLabelsArc, groups, chrtLoc, config.anchorPrefix);
+            
+            // Draw mini tics
+            var miniTicsArc = defineMiniTicksArc();
+            drawMiniTics(miniTicsArc, groups, chrtLoc);
+            
+            // Draw label
+            var labelData = [config.label + ' (' + config.units + ')'];
+            var gaugeLabelArc = defineGaugeLabelArc();
+            drawGaugeLabelText(gaugeLabelArc, groups, chrtLoc, config, labelData);
         }
         
         function debug_drawCircles() {

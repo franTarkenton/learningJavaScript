@@ -37,7 +37,7 @@
         
         var muleDeerConfig = {
             label: 'Mule Deer Risk', 
-            units: 'm',
+            units: 'ha',
             anchorPrefix:'muledeerlab'
         }
         
@@ -62,14 +62,24 @@
         
         var visualDataConfig = {
             label: 'Visual Quality Objective', 
-            units: 'm',
+            units: 'ha',
             anchorPrefix: 'labvqo'
         }
 
         
 		pieChart.addData(muleDeerData, muleDeerConfig);
 		pieChart.addData(visualData, visualDataConfig);
-        //pieChart.addData(visualData, visualDataConfig);
+		visualDataConfig.anchorPrefix = 'labvqo1';
+        pieChart.addData(visualData, visualDataConfig);
+        // visualDataConfig.anchorPrefix = 'labvqo2'
+// 
+        // pieChart.addData(visualData, visualDataConfig);
+                // visualDataConfig.anchorPrefix = 'labvqo3'
+// 
+        // pieChart.addData(visualData, visualDataConfig);
+                // visualDataConfig.anchorPrefix = 'labvqo4'
+// 
+
 		pieChart.createCharts(400, 'chartsHere')
 	</script>
 </body>
