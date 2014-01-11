@@ -37,7 +37,8 @@
         
         var muleDeerConfig = {
             label: 'Mule Deer Risk', 
-            units: 'm'
+            units: 'm',
+            anchorPrefix:'muledeerlab'
         }
         
         var visualData = [{
@@ -61,13 +62,14 @@
         
         var visualDataConfig = {
             label: 'Visual Quality Objective', 
-            units: 'm'
+            units: 'm',
+            anchorPrefix: 'labvqo'
         }
 
         
 		pieChart.addData(muleDeerData, muleDeerConfig);
 		pieChart.addData(visualData, visualDataConfig);
-
+        //pieChart.addData(visualData, visualDataConfig);
 		pieChart.createCharts(400, 'chartsHere')
 	</script>
 </body>
