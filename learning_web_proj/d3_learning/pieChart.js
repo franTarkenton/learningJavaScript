@@ -25,8 +25,7 @@ var pieChart = (
         pieChrt.chartConfigs = []; // populated with an array of config parameters
         minChrtDims = 150;
         spaceBetween = 5;
-        chartsPositionalInfo = [];
-        
+        chartsPositionalInfo = [];        
         
         /** 
          * When this method is called we know how many charts need to get created.  This method will 
@@ -84,10 +83,10 @@ var pieChart = (
                 chrtDims.ymin = Math.floor(curY);
                 chrtDims.ymax = Math.floor(curY + svgParams.chartHeight);
                 
-                // console.log("chrtDims.xmin " + chrtDims.xmin);
-                // console.log("chrtDims.xmax " + chrtDims.xmax);
-                // console.log("chrtDims.ymin " + chrtDims.ymin);
-                // console.log("chrtDims.ymax " + chrtDims.ymax);
+                console.log("chrtDims.xmin " + chrtDims.xmin);
+                console.log("chrtDims.xmax " + chrtDims.xmax);
+                console.log("chrtDims.ymin " + chrtDims.ymin);
+                console.log("chrtDims.ymax " + chrtDims.ymax);
 
                 curX = curX + spaceBetween + svgParams.chartWidth;
                
@@ -117,7 +116,7 @@ var pieChart = (
             while (curVal <= maxDomainValue) {
                 domainValueArray.push(curVal);
                 curVal += incrementValue;
-                console.log('curVal: ' + curVal);
+                // console.log('curVal: ' + curVal);
                 if (miniCurVal < maxDomainValue) {
                     while (miniCurVal < curVal ) {
                         miniDomainArray.push(miniCurVal);
@@ -143,6 +142,7 @@ var pieChart = (
             data = pieChrt.chartDataSets[i]
             chrtLoc = chartsPositionalInfo[i];
             // Step 1, calculate the domain of the data.
+            console.log("------------------------------------------");
             console.log("chartHeight: " + svgParams.chartHeight);
             console.log("chartWidth: " + svgParams.chartWidth);
             var max = d3.max(data, function(d, i) {
@@ -211,8 +211,8 @@ var pieChart = (
                       }).startAngle(function(d, i) {
                           return 0 - radianOffSet;
                       }).endAngle(function(d, i) {
-                          console.log("end data: " + val);
-                          console.log("rads:" + angleScale(d.area));
+                          //console.log("end data: " + val);
+                          //console.log("rads:" + angleScale(d.area));
                           return angleScale(d.area) - radianOffSet;
                       });
             return arc;
@@ -250,13 +250,13 @@ var pieChart = (
                 .startAngle(function(d, i) {
                     //return 0 - radianOffSet;
                     retVal = angleScale(d - offset) - radianOffSet;
-                    console.log("startAngle: " + retVal + ' ' + d);
+                    //console.log("startAngle: " + retVal + ' ' + d);
                     return retVal;
                 })
                 .endAngle(function(d, i) {
                     //return 0 + radianOffSet;
                     var retVal = angleScale(d + offset) - radianOffSet;
-                    console.log("endAngle: " + retVal + ' '  + d);
+                    //console.log("endAngle: " + retVal + ' '  + d);
                     return retVal
                 });
             return ticsArc;
@@ -280,13 +280,13 @@ var pieChart = (
                 .startAngle(function(d, i) {
                     //return 0 - radianOffSet;
                     retVal = angleScale(d - offset) - radianOffSet;
-                    console.log("startAngle: " + retVal + ' ' + d);
+                    //onsole.log("startAngle: " + retVal + ' ' + d);
                     return retVal;
                 })
                 .endAngle(function(d, i) {
                     //return 0 + radianOffSet;
                     var retVal = angleScale(d + offset) - radianOffSet;
-                    console.log("endAngle: " + retVal + ' '  + d);
+                    //console.log("endAngle: " + retVal + ' '  + d);
                     return retVal
                 });
             return ticsArc;
@@ -309,7 +309,7 @@ var pieChart = (
                         // come back and check that!
                         startAngle = angleScale(domainLabelValues.bigIncr[i] - textOffset) - radianOffSet;
                     //}
-                    console.log("startAngle: " + startAngle);
+                    //console.log("startAngle: " + startAngle);
                     return startAngle;
                 })
                 .endAngle(function(d, i) {
@@ -402,11 +402,14 @@ var pieChart = (
                 });
         }
         
+        /**
+         * 
+         */
         function drawBigTics(bigTicsArc, groups, chrtLoc) {
-            var bigTics, xOffset, yOffset;
+            var bigTics, xOffset, yOffset, translateString;
             xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
             yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-
+            translateString = "translate(" + xOffset + " , " + yOffset +")";
             bigTics = groups.bigTics.selectAll('path')
                 .data(domainLabelValues.bigIncr)
                 .enter()
@@ -414,14 +417,19 @@ var pieChart = (
                 .attr('d', bigTicsArc)
                 .attr("stroke", '#595859')
                 .attr("stroke-width", '.1')
-                .attr("transform", "translate("+xOffset+" ,"+yOffset+")");
-        }
+                .attr("transform", translateString);
+        }
         
+        /**
+         * 
+         */
         function drawMiniTics(miniTicsArc, groups, chrtLoc) {
-            var miniTics, xOffset, yOffset, bigTics;
+            
+            var miniTics, xOffset, yOffset, bigTics, translateString;
+            
             xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
             yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-
+            translateString = "translate(" + xOffset + " , " + yOffset +")";
             bigTics = groups.miniTics.selectAll('path')
                 .data(domainLabelValues.subIncr)
                 .enter()
@@ -429,14 +437,15 @@ var pieChart = (
                 .attr('d', miniTicsArc)
                 .attr("stroke", '#595859')
                 .attr("stroke-width", '.1')
-                .attr("transform", "translate("+xOffset+" ,"+yOffset+")");
+                .attr("transform", translateString);
         }
         
         function drawBigTicLabels(bigTicLabelsArc, groups, chrtLoc, anchorPrefix) {
             // define the path along which the text will go.
-            var xOffset, yOffset;
+            var xOffset, yOffset, translateString;
             xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
             yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
+            translateString = "translate(" + xOffset + " , " + yOffset +")";
 
             groups.bigTicsLabelsPath.selectAll("path")
                 .data(domainLabelValues.bigIncr)
@@ -447,7 +456,7 @@ var pieChart = (
                     return anchorPrefix + '_scaleText' + i;
                 })
                 .style("opacity", 0.0)
-                .attr("transform", "translate("+xOffset+","+yOffset+")");
+                .attr("transform", translateString);
             
             var ticText = groups.bigTicsLabelsText.selectAll("text")
                 .data(domainLabelValues.bigIncr)
@@ -471,9 +480,11 @@ var pieChart = (
         }
         
         function drawGaugeLabelText(gaugeLabelArc, groups, chrtLoc, config, unitData) {
-            var xOffset, yOffset;
+            var xOffset, yOffset, translateString;
             xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
             yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
+            translateString = "translate(" + xOffset + " , " + yOffset +")";
+            console.log("GaugeLabelTranslateString: " + translateString);
             //unitData = [config.label];
             
             groups.gaugeLabelPaths.selectAll("path")
@@ -485,7 +496,7 @@ var pieChart = (
                     return config.anchorPrefix + 'unitText' + i;
                 })
                 .style("opacity", 0.0)
-                .attr("transform", "translate("+xOffset+","+yOffset+")");
+                .attr("transform", translateString);
                 
             var gaugeUnits = groups.gaugeUnitsText.selectAll("text")
                 .data(unitData)
@@ -531,7 +542,6 @@ var pieChart = (
             var config = pieChrt.chartConfigs[dataPosition];
             var chrtLoc = chartsPositionalInfo[dataPosition];
             var groups = defineGroupedElements();
-            
             // drawing the data
             var dataArc = defineDataArc(data);
             drawDataArc(data, dataArc, groups.dataArcs, chrtLoc);

@@ -69,16 +69,19 @@
         
 		pieChart.addData(muleDeerData, muleDeerConfig);
 		pieChart.addData(visualData, visualDataConfig);
-		visualDataConfig.anchorPrefix = 'labvqo1';
-        pieChart.addData(visualData, visualDataConfig);
+		
+		// creating a brand new set of data  var a = b only copies the reference!
+		var visualDataConfig_B = JSON.parse(JSON.stringify(visualDataConfig));
+		visualDataConfig_B.anchorPrefix = 'labvqoA';
+        pieChart.addData(visualData, visualDataConfig_B);
+        
         // visualDataConfig.anchorPrefix = 'labvqo2'
-// 
         // pieChart.addData(visualData, visualDataConfig);
-                // visualDataConfig.anchorPrefix = 'labvqo3'
-// 
+//         
+        // visualDataConfig.anchorPrefix = 'labvqo3'
         // pieChart.addData(visualData, visualDataConfig);
-                // visualDataConfig.anchorPrefix = 'labvqo4'
-// 
+        
+
 
 		pieChart.createCharts(400, 'chartsHere')
 	</script>
