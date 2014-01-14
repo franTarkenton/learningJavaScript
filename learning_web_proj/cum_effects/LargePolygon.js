@@ -169,10 +169,10 @@ function addMapControls() {
 }
 
 function makeSelection() {
-
+    var i;
     // iterate over all the controls searching for the SelectFeature Control
     console.log("got here!");
-    for (var i = 0; i < map.controls.length; i++) {
+    for (i = 0; i < map.controls.length; i++) {
         control = map.controls[i];
         if ( control instanceof OpenLayers.Control.SelectFeature) {
             console.log("SelectFeature Control has been found");

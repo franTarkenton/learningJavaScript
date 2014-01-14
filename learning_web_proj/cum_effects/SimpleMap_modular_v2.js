@@ -28,13 +28,61 @@ var maplib = ( function() {"use strict";
             })
         });
 
-        function objectToConsole(inObj) {
-            var i, keys;
-            keys = Object.keys(inObj);
+        // function objectToConsole(inObj, spaces) {
+            // var i, keys, spaceChars;
+            // if (typeof spaces === 'undefined') {
+                // spaces = 1;
+            // }
+            // keys = Object.keys(inObj);
+            // for ( i = 0; i < keys.length; i += 1) {
+                // if ( typeof inObj[keys[i]]  === 'object') {
+                    // spaces = spaces + 4;
+                    // objectToConsole(inObj[keys[i]], spaces);
+                    // spaces = spaces - 4
+                // }
+                // spaceChars = ' ' * spaces;
+                // console.log(spaceChars + keys[i] + ' = ' + inObj[keys[i]]);
+            // }
+        // }
+        
+        function objectToConsole(obj, indent) {
+            // super handy method, don't want to lose this. Useful for debugging
+            // and figuring out stuff.
+            var keys, i, key, value, spaces, spacesInIndent, isObj, bracketStart, bracketEnd;
+            spacesInIndent = 4;
+            bracketStart = '{';
+            bracketEnd = '}';
+            if (typeof indent === 'undefined') {
+                indent = 0;
+            }
+            isObj = false;
+            //console.log(typeof indent);
+            spaces = Array(indent).join(' ');
+            //console.log("spaces: " + spaces);
+            keys = Object.keys(obj);
             for ( i = 0; i < keys.length; i += 1) {
-                console.log(keys[i] + ' = ' + inObj[keys[i]]);
+                key = keys[i];
+                value = obj[key];
+                if (( typeof value).toString() === 'object') {
+                    if (Object.prototype.toString.call(value) === '[object Array]') {
+                        bracketStart = '[';
+                        bracketEnd = ']';
+                    }
+                    console.log(spaces + key + ' : ' + bracketStart);
+                    indent = indent + spacesInIndent;
+                    objectToConsole(value, indent);
+                    isObj = true;
+                } else {
+                    console.log(spaces + key + ' : ' + value);
+                }
+            }
+            if (isObj) {
+                indent = indent - spacesInIndent;
+                spaces = Array(indent).join(' ');
+                console.log(spaces + bracketEnd);
             }
         }
+
 
         function layerExists(lyrName) {
             var retVal, i, curLyr;
@@ -339,17 +387,20 @@ var maplib = ( function() {"use strict";
             // the following url will retrieve that file for a particular layer
             // next step is to take what is retreived by that and parse it using
             // the parser.
-            MakeD3Report(srcLayer, sumObj);
+            makeD3Report(srcLayer, sumObj);
         }
 
-        function MakeD3Report(lyrName, areaReport) {
+        function makeD3Report(lyrName, areaReport) {
             // step 1 define an xmlhttp request, and a handler.  The handler
             // will then parse the
             var sld, pieChart, styles;
             sld = getSLD(lyrName);
             styles = extractStylesFromSLD(sld, lyrName);
             // can now make the report
-            
+            console.log("area report is: ")
+            objectToConsole(areaReport);
+            console.log("styles extracted from SLD:");
+            objectToConsole(styles);
 
         }
 
