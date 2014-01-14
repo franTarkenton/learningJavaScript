@@ -18,14 +18,15 @@ var pieChart = (
             minimumChartSize, spaceBetween, chartWidth, chartHeight,
             dataRadiusScale, minChrtDims,  percent2WidthDim, 
             percent2HeightDim, numCols, numRows, chartsPositionalInfo, 
-            domainLabelValues ;
+            domainLabelValues, chartCircumfrence;
         pieChrt = {}; // namespace
         svgParams = {};
         pieChrt.chartDataSets = []; // populated with an array of data sets.  Each element in this array  represents a chart to be drawn
         pieChrt.chartConfigs = []; // populated with an array of config parameters
         minChrtDims = 150;
-        spaceBetween = 5;
-        chartsPositionalInfo = [];        
+        spaceBetween = 7;
+        chartsPositionalInfo = [];
+        chartCircumfrence = 1;  // where 1 is 180 and 2 = 360 degrees.
         
         /** 
          * When this method is called we know how many charts need to get created.  This method will 
@@ -56,10 +57,15 @@ var pieChart = (
             // Can't forsee a situation where we would have more than 10 charts per column. 
             // norm is likely 2 - 4.
             svgParams.numRows = 1;
-            svgParams.numCols = Math.floor((svgParams.width - spaceBetween)  / ( minChrtDims + spaceBetween) ); // 2
-            
-            svgParams.chartWidth = ((svgParams.width - spaceBetween - (spaceBetween * svgParams.numCols)) / svgParams.numCols);
+            svgParams.numCols = Math.floor((svgParams.width - spaceBetween)  / ( minChrtDims + spaceBetween ) ); // 2
+            // TODO: for now going to just assume either a 180 or 360 degree chart.  Should really put in 
+            //       logic that allows for any angle chart, and calculates the spacign for this correctly.
+            svgParams.chartWidth = ( ( svgParams.width - spaceBetween - ( spaceBetween * svgParams.numCols ) ) / svgParams.numCols );
             svgParams.chartHeight = svgParams.chartWidth;
+            if (chartCircumfrence <= 1) {
+                svgParams.chartHeight = svgParams.chartHeight / 2;
+            }
+            
             // if there are 2 columns there will be space in between on the most left and right and the middle
             // upper left coordinates of the current chart.
             curX = spaceBetween;
@@ -93,7 +99,7 @@ var pieChart = (
                 chartsPositionalInfo.push(chrtDims);
                 curCol += 1
             }
-            svgParams.height = (( svgParams.numRows * spaceBetween ) + (svgParams.chartWidth * svgParams.numRows) ) + spaceBetween;
+            svgParams.height = (( svgParams.numRows * spaceBetween ) + (svgParams.chartHeight * svgParams.numRows) ) + spaceBetween;
         }
         
         /**
@@ -157,15 +163,16 @@ var pieChart = (
             // Step 2,  create various calculators to translate between data values, 
             //          and angles, radian that are used to represent them on the screen.
             //  2a. angle scale - calculates angle based on a data value.
-            angleScale = d3.scale.linear().domain([0, maxDomain]).range([0, 1 * Math.PI]);
+            angleScale = d3.scale.linear().domain([0, maxDomain]).range([0, chartCircumfrence * Math.PI]);
             //  2b. scale starts at 270 through to 90. - radian offset is 90 degrees in radians
             radianOffSet = 90 * (Math.PI / 180);
             // Always want to express dimensions from here on forth as percentages of 
             // the total size allocated for the chart.  This function will translate 
             // percentage values to chart dimensional units.
             percent2WidthDim = d3.scale.linear().domain([0, 100]).range([0, svgParams.chartWidth / 2 ]);
-            percent2HeightDim = d3.scale.linear().domain([0, 100]).range([0, svgParams.chartHeight / 2 ]);
-
+            // percent2HeightDim = d3.scale.linear().domain([0, 100]).range([0, svgParams.chartHeight / 2 ]);
+            percent2HeightDim = d3.scale.linear().domain([0, 100]).range([0, svgParams.chartHeight / chartCircumfrence ]);
+            
             //  2c. radius scale, used to calculate minium and maxium raduses for arcs
             //       input values are percentages.
             dataRadiusScale = d3.scale.linear().domain([0, data.length  ]).range([percent2WidthDim(15), percent2HeightDim(70)]);
@@ -319,6 +326,25 @@ var pieChart = (
         }
         
         /**
+         * Recieves a chart Location object.  Using this and 
+         * the total circumfrance of the current chart returns 
+         * the offset coordinates for where the chart should be
+         * positioned on the page. 
+         */
+        function caluclateXYOffsets(chrtLoc) {
+            var xOffset, yOffset, offsets;
+            offsets = {};
+            offsets.x = ((chrtLoc.xmax - chrtLoc.xmin) / 2 ) + chrtLoc.xmin;
+            offsets.y = ((chrtLoc.ymax - chrtLoc.ymin) ) + chrtLoc.ymin;
+            if (chartCircumfrence > 1) {
+                offsets.y = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
+            }
+            console.log('xOffset ' + xOffset);
+            console.log('yOffset ' + yOffset);
+            return offsets;
+        }
+        
+        /**
          * @param {Object[]} data
          * @param {String} data.label - The value that will be used to label the axis
          * @param {number} data.area - Contains the area that will be represented in the chart
@@ -336,12 +362,9 @@ var pieChart = (
          * @param {number} offsets.y - Ditto as above but for Y.
          */
         function drawDataArc(data, arc, grpElem, chrtLoc) {
-            var xOffset, yOffset;
-            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2 ) + chrtLoc.xmin;
-            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-            console.log('xOffset ' + xOffset);
-            console.log('yOffset ' + yOffset);
-
+            var offsets, transformText;
+            offsets = caluclateXYOffsets(chrtLoc);
+            transformText = 'translate('+ offsets.x +', '+ offsets.y +')';
             grpElem.selectAll('path')
                 .data(data)
                 .enter()
@@ -353,16 +376,15 @@ var pieChart = (
                 .style('fill', function(d) {
                     return d.color;
                 })
-                .attr("transform", 'translate('+ xOffset +', '+ yOffset +')'); // 300, 200
+                .attr("transform", transformText); // 300, 200
                 //.attr("transform", 'translate('+ chartWidth +', '+ chartHeight +')'); // 300, 200
         }
         
         function drawLabelDataArc(data, arc, groups, chrtLoc, anchorText) {
             // start by drawing the hidden arc
-            var xOffset, yOffset, labelText;
-            
-            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
-            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
+            var offsets, transformText, labelText;
+            offsets = caluclateXYOffsets(chrtLoc);
+            transformText = 'translate('+ offsets.x +', '+ offsets.y +')';
             // define the path along the arc, and create the anchors for the text
             groups.dataLabelArc.selectAll('path')
                 .data(data)
@@ -373,7 +395,7 @@ var pieChart = (
                     return anchorText + i;
                 })
                 .style("opacity", 0.0) // needs to be edited after debugging
-                .attr('transform', 'translate('+ xOffset + ',' + yOffset + ')');
+                .attr('transform', transformText);
                 
             labelText = groups.dataLabelText.selectAll('text')
                 .data(data)
@@ -406,10 +428,9 @@ var pieChart = (
          * 
          */
         function drawBigTics(bigTicsArc, groups, chrtLoc) {
-            var bigTics, xOffset, yOffset, translateString;
-            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
-            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-            translateString = "translate(" + xOffset + " , " + yOffset +")";
+            var offsets, transformText, bigTics;
+            offsets = caluclateXYOffsets(chrtLoc);
+            transformText = 'translate('+ offsets.x +', '+ offsets.y +')';
             bigTics = groups.bigTics.selectAll('path')
                 .data(domainLabelValues.bigIncr)
                 .enter()
@@ -417,19 +438,16 @@ var pieChart = (
                 .attr('d', bigTicsArc)
                 .attr("stroke", '#595859')
                 .attr("stroke-width", '.1')
-                .attr("transform", translateString);
+                .attr("transform", transformText);
         }
         
         /**
          * 
          */
         function drawMiniTics(miniTicsArc, groups, chrtLoc) {
-            
-            var miniTics, xOffset, yOffset, bigTics, translateString;
-            
-            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
-            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-            translateString = "translate(" + xOffset + " , " + yOffset +")";
+            var miniTics, offsets, bigTics, transformText;
+            offsets = caluclateXYOffsets(chrtLoc);
+            transformText = 'translate('+ offsets.x +', '+ offsets.y +')';
             bigTics = groups.miniTics.selectAll('path')
                 .data(domainLabelValues.subIncr)
                 .enter()
@@ -437,15 +455,14 @@ var pieChart = (
                 .attr('d', miniTicsArc)
                 .attr("stroke", '#595859')
                 .attr("stroke-width", '.1')
-                .attr("transform", translateString);
+                .attr("transform", transformText);
         }
         
         function drawBigTicLabels(bigTicLabelsArc, groups, chrtLoc, anchorPrefix) {
             // define the path along which the text will go.
-            var xOffset, yOffset, translateString;
-            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
-            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-            translateString = "translate(" + xOffset + " , " + yOffset +")";
+            var offsets, transformText;
+            offsets = caluclateXYOffsets(chrtLoc);
+            transformText = 'translate('+ offsets.x +', '+ offsets.y +')';
 
             groups.bigTicsLabelsPath.selectAll("path")
                 .data(domainLabelValues.bigIncr)
@@ -456,7 +473,7 @@ var pieChart = (
                     return anchorPrefix + '_scaleText' + i;
                 })
                 .style("opacity", 0.0)
-                .attr("transform", translateString);
+                .attr("transform", transformText);
             
             var ticText = groups.bigTicsLabelsText.selectAll("text")
                 .data(domainLabelValues.bigIncr)
@@ -480,11 +497,10 @@ var pieChart = (
         }
         
         function drawGaugeLabelText(gaugeLabelArc, groups, chrtLoc, config, unitData) {
-            var xOffset, yOffset, translateString;
-            xOffset = ((chrtLoc.xmax - chrtLoc.xmin) / 2) + chrtLoc.xmin;
-            yOffset = ((chrtLoc.ymax - chrtLoc.ymin) / 2) + chrtLoc.ymin;
-            translateString = "translate(" + xOffset + " , " + yOffset +")";
-            console.log("GaugeLabelTranslateString: " + translateString);
+            var offsets, transformText, gaugeUnits;
+            offsets = caluclateXYOffsets(chrtLoc);
+            transformText = 'translate('+ offsets.x +', '+ offsets.y +')';
+            console.log("GaugeLabelTranslateString: " + transformText);
             //unitData = [config.label];
             
             groups.gaugeLabelPaths.selectAll("path")
@@ -496,9 +512,9 @@ var pieChart = (
                     return config.anchorPrefix + 'unitText' + i;
                 })
                 .style("opacity", 0.0)
-                .attr("transform", translateString);
+                .attr("transform", transformText);
                 
-            var gaugeUnits = groups.gaugeUnitsText.selectAll("text")
+            gaugeUnits = groups.gaugeUnitsText.selectAll("text")
                 .data(unitData)
                 .enter()
                 .append("text");
