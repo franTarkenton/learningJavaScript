@@ -2,10 +2,10 @@
 // self-invoking, anonymous function:
 
 /*global alert: false, confirm: false, console: false, Debug: false, opera: false, prompt: false, WSH: false */
-var maplib = ( function() {"use strict";
+var maplib = ( function(piechart) {"use strict";
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
 
-        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData, gce_domain, gce_ows;
+        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData, gce_domain, gce_ows, piechart;
 
         mapObj = {};
 
@@ -19,6 +19,37 @@ var maplib = ( function() {"use strict";
         albersProj = 'EPSG:3005';
         webMercatorProj = 'EPSG:900913';
         // EPSG:3005
+        
+        
+        
+        
+        
+        // var muleDeerData = [{
+            // label : 'Moderate',
+            // area : 23422,
+            // color : '#FF9254'
+        // }, {
+            // label : 'High',
+            // area : 61231,
+            // color : '#FF2D12'
+        // }, {
+            // label : 'Low',
+            // area : 5820,
+            // color : '#FFC98F'
+        // }];
+//         
+        // var muleDeerConfig = {
+            // label: 'Mule Deer Risk', 
+            // units: 'ha',
+            // anchorPrefix:'muledeerlab'
+        // }
+                // pieChart.addData(muleDeerData, muleDeerConfig);
+        
+        
+        
+        
+        
+        
 
         wfsStyleMap = new OpenLayers.StyleMap({
             "default" : new OpenLayers.Style({
@@ -71,15 +102,15 @@ var maplib = ( function() {"use strict";
                     console.log(spaces + key + ' : ' + bracketStart);
                     indent = indent + spacesInIndent;
                     objectToConsole(value, indent);
-                    isObj = true;
+                    indent = indent - spacesInIndent;
+                    spaces = Array(indent).join(' ');
+                    console.log(spaces + bracketEnd + ' ');
                 } else {
                     console.log(spaces + key + ' : ' + value);
                 }
             }
             if (isObj) {
-                indent = indent - spacesInIndent;
-                spaces = Array(indent).join(' ');
-                console.log(spaces + bracketEnd);
+                //indent = indent - spacesInIndent;
             }
         }
 
@@ -387,13 +418,27 @@ var maplib = ( function() {"use strict";
             // the following url will retrieve that file for a particular layer
             // next step is to take what is retreived by that and parse it using
             // the parser.
-            makeD3Report(srcLayer, sumObj);
+            makeD3Report(srcLayer, sumObj, 'undefinedArea');
         }
-
-        function makeD3Report(lyrName, areaReport) {
+        
+        /**
+         * @param {String} lyrName - The name of the layer that is to be reported on
+         * @param {Object} areaReport - An object who's key values / properties contain
+         *                              the attribute values of the layer while the 
+         *                              values contain the area that the submitted
+         *                              polygon overlaps with for the particular
+         *                              attribute.
+         * Example areaReport...
+         *  {'LOW': 242342, 
+         *   'MODERATE', 989122, 
+         *    'HIGH', 53925633 }
+         * 
+         */
+        function makeD3Report(lyrName, areaReport, keyValueForUndefinedArea) {
             // step 1 define an xmlhttp request, and a handler.  The handler
             // will then parse the
-            var sld, pieChart, styles;
+            var sld, pieChart, styles, reportData, reportRecord, configObj;
+            console.log("layer name is: " + lyrName);
             sld = getSLD(lyrName);
             styles = extractStylesFromSLD(sld, lyrName);
             // can now make the report
@@ -401,9 +446,66 @@ var maplib = ( function() {"use strict";
             objectToConsole(areaReport);
             console.log("styles extracted from SLD:");
             objectToConsole(styles);
-
+            // restructure the styles object and the areaReport into a list 
+            // of objects with the following properties:
+            // label: the attribute value that is being reported
+            // area: the area in the submitted polygon that have the value described
+            //       in the property label
+            // color: the color that this attribute is being shaded as.
+            
+            // then create a config object with the following properties:
+            // label: The name of the layer that is being reported on.
+            // units: The unit of measurement used for the area column
+            // anchorPrefix: used internally, must be unique for each layer.
+            // TODO: consider autocalculating anchorPrefix
+            // TODO: Currently set up to only report on one data layer.  will modify to be 
+            //       able to report on many layers.
+            reportData = [];
+            reportRecord = combineSLDandReportData(areaReport, styles, lyrName, keyValueForUndefinedArea);
+            objectToConsole(reportRecord);
+            configObj = {};
+            configObj.label = lyrName;
+            configObj.units = 'meters';
+            configObj.anchorPrefix = 'muleDeer';
+            // add the report tothe div=reportMainPanel 
+            pieChart.addData(reportRecord, configObj);
+            pieChart.createCharts(600, 'reportMainPanel');
         }
-
+        
+        function combineSLDandReportData(areaReport, styles, lyrName, keyValueForUndefinedArea) {
+            var keys, i, atribVal, record, data;
+            data = [];
+            keys = Object.keys(areaReport);
+            for (i=0; i<keys.length; i++) {
+                atribVal = keys[i];
+                if (atribVal === keyValueForUndefinedArea) {
+                    // TODO: figure out later how to report out on areas not in a layer, just skipping for now
+                }
+                else if (!styles.hasOwnProperty(atribVal)) {
+                    console.warn( "Attribute value: " + atribVal + ' is not described in the sld for the layer - ' + lyrName);
+                }
+                else if (!styles[atribVal].hasOwnProperty('fillColor')) {
+                    console.warn( "The sld object for the attribute (" + atribVal + ") does not have a property called fillColor, but it should!");
+                } else {
+                    record = {};
+                    record.label = atribVal;
+                    record.area = areaReport[atribVal]
+                    record.color = styles[atribVal].fillColor
+                    data.push(record);
+                }
+            }
+            return data;
+        }
+        
+        /**
+         * takes an OpenLayers sld object and a layer name, parses the sld object 
+         * extracting individual attribute values and the associated colors used
+         * to symbolize them in the map.
+         * 
+         * returns an object who's keys/property names are the individual values from 
+         * one of the layers attributes, the values are an object with two properties, the 
+         * stroke color and the fill color.
+         */
         function extractStylesFromSLD(sld, lyrName) {
             var rules, i, rule, columnValue, styles, defaultFill, defaultStroke;
             styles = {};
@@ -433,7 +535,16 @@ var maplib = ( function() {"use strict";
             }
             return styles;
         }
-
+        
+        /** 
+         * Recieves a layer name, using the layer name assembles a request to 
+         * geoserver for the associated SLD that contains the color map used
+         * to symbolize the features of the layer. 
+         *
+         * @param {String}  lyrName - The name of the WMS layer for which we 
+         *                            want to retrieve the associated SLD.
+         * @return - an OpenLayers sld object.
+         */
         function getSLD(lyrName) {
             var sldFormat, request, sld;
             request = OpenLayers.Request.GET({
@@ -795,9 +906,10 @@ var maplib = ( function() {"use strict";
             }));
         };
 
-        mapObj.initMap = function() {
+        mapObj.initMap = function(pieChrt) {
             // OSM uses projection 3857, but there is no def available for this so
             // manually adding it.
+            piechart = pieChrt;
             Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
 
             console.log("map is getting initialized...");
@@ -819,5 +931,5 @@ var maplib = ( function() {"use strict";
 
         return mapObj;
 
-    }());
+    }(maplib || {}));
 

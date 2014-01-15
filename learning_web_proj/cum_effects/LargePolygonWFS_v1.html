@@ -33,6 +33,8 @@
         <script src="../lib/proj4js-compressed.js"></script>
         <script src='http://spatialreference.org/ref/epsg/3005/proj4js/'></script>
         <script src='http://spatialreference.org/ref/sr-org/6864/proj4js/'></script>
+        <script src='../d3_learning/pieChart.js'></script>
+        <script src="http://d3js.org/d3.v3.min.js"></script>
         <script>
             $(function() {
                 $("#accordion").accordion({ collapsible: true,
@@ -91,6 +93,7 @@
             // following if only using hte simpleMap.js file initMap(); use this
             // if using simpleMap_modular.js file
             //var mapObj = new maplib();
+            
             maplib.initMap();
             //mapObj.someFunc();
             maplib.addMapControls();

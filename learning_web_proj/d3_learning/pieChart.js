@@ -652,4 +652,4 @@ var pieChart = (
         };
 
         return pieChrt;
-    }());
+    }(pieChart || {}));
