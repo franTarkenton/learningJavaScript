@@ -182,11 +182,17 @@ body {
     padding: 10px;
     margin: 2px -4px 2px 2px;}
 
-#mainSection {
+#mainSection{
     width: 100%;
     margin: 2px;
     border: 1px solid gray;
     /*padding: 20px, 20px, 40px 40px;*/
+}
+
+#reportMainPanel {
+	width: 100%;
+	margin: 2px;
+    border: 1px solid gray;
 }
 
 

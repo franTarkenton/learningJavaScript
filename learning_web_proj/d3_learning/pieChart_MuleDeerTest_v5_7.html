@@ -3,6 +3,7 @@
 <style>
 	body {
 		font: 10px sans-serif;
+		width: 100%;
 	}
 
 	.arc path {
@@ -13,7 +14,13 @@
     stroke: white;
     stroke-width: .5px;
     opacity: 0.9;
-}
+    }
+    
+    #chartsHere {
+    margin: 2px;
+    border: 1px solid gray;
+    }
+
 
 </style>
 <body>
@@ -21,19 +28,37 @@
 	<script src="http://d3js.org/d3.v3.min.js"></script>
 	<script src="pieChart.js"></script>
 	<script>
-		var muleDeerData = [{
-            label : 'Moderate',
-            area : 23422,
-            color : '#FF9254'
+		// var muleDeerData = [{
+            // label : 'Moderate',
+            // area : 23422,
+            // color : '#FF9254'
+        // }, {
+            // label : 'High',
+            // area : 61231,
+            // color : '#FF2D12'
+        // }, {
+            // label : 'Low',
+            // area : 5820,
+            // color : '#FFC98F'
+        // }];
+        
+        
+        
+        var muleDeerData = [ {
+            label : 'LOW',
+            area : 1198421.7883800997,
+                   
+            color : '#DBE88D'
         }, {
-            label : 'High',
-            area : 61231,
-            color : '#FF2D12'
+            label : 'MODERATE 2', 
+            area : 478952.50954190386,
+                   
+            color : '#E87E53' 
         }, {
-            label : 'Low',
-            area : 5820,
-            color : '#FFC98F'
-        }];
+            label : 'HIGH', 
+            area : 1089782.1311922504,  
+            color : '#FF2D12' 
+        }];        
         
         var muleDeerConfig = {
             label: 'Mule Deer Risk', 
@@ -68,12 +93,12 @@
 
         
 		pieChart.addData(muleDeerData, muleDeerConfig);
-		pieChart.addData(visualData, visualDataConfig);
+		//pieChart.addData(visualData, visualDataConfig);
 		
 		// creating a brand new set of data  var a = b only copies the reference!
 		var visualDataConfig_B = JSON.parse(JSON.stringify(visualDataConfig));
 		visualDataConfig_B.anchorPrefix = 'labvqoA';
-        pieChart.addData(visualData, visualDataConfig_B);
+        //pieChart.addData(visualData, visualDataConfig_B);
         
         // visualDataConfig.anchorPrefix = 'labvqo2'
         // pieChart.addData(visualData, visualDataConfig);
@@ -83,6 +108,6 @@
         
 
 
-		pieChart.createCharts(400, 'chartsHere')
+		pieChart.createCharts('chartsHere')
 	</script>
 </body>

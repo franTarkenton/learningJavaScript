@@ -23,7 +23,7 @@ var pieChart = (
         svgParams = {};
         pieChrt.chartDataSets = []; // populated with an array of data sets.  Each element in this array  represents a chart to be drawn
         pieChrt.chartConfigs = []; // populated with an array of config parameters
-        minChrtDims = 150;
+        minChrtDims = 300;
         spaceBetween = 7;
         chartsPositionalInfo = [];
         chartCircumfrence = 1;  // where 1 is 180 and 2 = 360 degrees.
@@ -110,8 +110,18 @@ var pieChart = (
             var incrementValue, numDivisions, curVal, domainValueArray,
                 miniDomainArray, miniIncr, miniCurVal, miniNumDivs, 
                 domains;
-            numDivisions = 10;
-            miniNumDivs = 10;
+            console.log("maxDomainValue: " + maxDomainValue);
+            console.log("maxDomainValue length: " + maxDomainValue.toString().length);
+            console.log("first number in maxDomainValue: " + maxDomainValue.toString()[0]);
+            if (maxDomainValue.toString()[0] === '5') {
+                numDivisions = 5;
+                miniNumDivs = 10;
+            } else {
+                numDivisions = 10;
+                miniNumDivs = 10;
+            }
+                
+            console.log('divs are: ' +numDivisions);
             curVal = 0;
             domainValueArray = [];
             miniDomainArray = [];
@@ -131,6 +141,7 @@ var pieChart = (
                     miniCurVal += miniIncr;
                 }
             }
+            
             domains = {}
             domains.bigIncr = domainValueArray;
             domains.subIncr = miniDomainArray;
@@ -190,7 +201,15 @@ var pieChart = (
          */
         function calcMaxDomainValue(val) {
             var numDig, num, ceilNum;
+                        if (val % 1 !== 0) {
+                val = Math.round(val);
+            }
             numDig = val.toString().length;
+
+            console.log("val: " + val);
+            console.log("typeof val: " + typeof val);
+            console.log("numDig:" + numDig);
+
             num = val / Math.pow(10, numDig - 1);
             ceilNum = Math.ceil(val / Math.pow(10, numDig - 1)) ; // * Math.pow(10, numDig - 1)
             //console.log("numDig:" + numDig + ' ceilNum:' + ceilNum);
@@ -302,21 +321,27 @@ var pieChart = (
         function defineBigTicksLabelsArc() {
             var textOffset, startAngle, ticTextArc;
             // TODO: need to come back and calculate an appropriate text offset so it works always.
-            textOffset = 3000;
+            // textOffset = 3000;
+           //textOffset = 200000;
+           textOffset = ( domainLabelValues.bigIncr[1] - domainLabelValues.bigIncr[0] ) / 4;
+           // TODO: textOffset needs to be calculated dynamically in a way that ensures there is adequate room for the text labels.
+
             // A) define the arc
             ticTextArc = d3.svg.arc()
                 .innerRadius(percent2WidthDim(85))
                 .outerRadius(percent2WidthDim(90))
                 .startAngle(function(d, i) {
                     //return 0 - radianOffSet;
-                    startAngle = 0;
-                    //if (i !== 0) {
-                        // TODO: domainLabelValues is likely not required as I think this data set 
-                        // is going to get bound to this arc, therefor the variable d should work
-                        // come back and check that!
-                        startAngle = angleScale(domainLabelValues.bigIncr[i] - textOffset) - radianOffSet;
-                    //}
+                    
+                    // if (i === 0) {
+                        // textOffset = ( domainLabelValues.bigIncr[1] - domainLabelValues.bigIncr[0] ) / 3;
+                    // } else if (i === domainLabelValues.bigIncr.length - 1) {
+                        // textOffset = textOffset - textOffset;
+                    // } else {
+                        // textOffset = ( domainLabelValues.bigIncr[1] - domainLabelValues.bigIncr[0] ) / 3;
+                    // }
                     //console.log("startAngle: " + startAngle);
+                    startAngle = angleScale(domainLabelValues.bigIncr[i] - textOffset) - radianOffSet;
                     return startAngle;
                 })
                 .endAngle(function(d, i) {
@@ -486,10 +511,15 @@ var pieChart = (
                     // return ((outerRad - innerRad) * 110 / 100)  + 'px';  // a cludgy solution but seems to work to get the text in the middle of the arc
                 // });
                 //.attr('class', 'shadow');
-                
+            
+            // The gauge text needs to autoscale depending on the domain of the data.
+            // 
+            
+
+            
             ticText.append("textPath")
                 //.attr('text-anchor', 'middle')
-                .style("font-size", '12px')
+                .style("font-size", '10px')
                 .style("font-weight", 'bold')
                 .style("font-family", 'Verdana')
                 .attr("xlink:href", function(d, i) { return "#" + anchorPrefix + '_scaleText' + i;}) 
@@ -519,7 +549,7 @@ var pieChart = (
                 .enter()
                 .append("text");
                  //.attr('class', 'shadow');
-                 
+            
             gaugeUnits.append("textPath")
                 .attr('text-anchor', 'middle')
                 .attr("startOffset", '25%')
@@ -630,10 +660,24 @@ var pieChart = (
          * @param {string} div - The div tag that identifies where in the html doc
          *                       the svg should be inserted.
          */
-        pieChrt.createCharts = function(w, div) {
+        pieChrt.createCharts = function(div, w) {
             // width will be static, height will be dynamic depending on how many charts need to 
             // be drawn.  Will draw 2 charts per width for now.
             // create the svg that needs to be drawn
+            // width is optional;
+            var junkvar, i, divelem;
+            divelem = document.getElementById(div);
+            junkvar = divelem.getBoundingClientRect().width;
+            console.log("junkvar", junkvar)
+
+            
+            
+            if (typeof w === 'undefined') {
+                w = d3.select('#' + div).style('width');
+                w = w.replace(/[^\d.-]/g, '');
+                w = parseInt(w);
+            }
+            console.log("w is" + w);
             svgParams.width = w;
             defineChartSize(svgParams.width);
             svg = d3.select('#' + div)
@@ -645,7 +689,7 @@ var pieChart = (
             console.log("svg height:" + svgParams.height);
             
             // Iterating over the data used to draw each chart.
-            for (i=0; i<pieChrt.chartDataSets.length; i++) {
+            for (i=0; i<pieChrt.chartDataSets.length; i+=1) {
                 configureScaleFunctions(i);
                 drawChart(i);
             }

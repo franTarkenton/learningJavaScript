@@ -2,10 +2,10 @@
 // self-invoking, anonymous function:
 
 /*global alert: false, confirm: false, console: false, Debug: false, opera: false, prompt: false, WSH: false */
-var maplib = ( function(piechart) {"use strict";
+var maplib = ( function() {"use strict";
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
 
-        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData, gce_domain, gce_ows, piechart;
+        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData, gce_domain, gce_ows, pieChart;
 
         mapObj = {};
 
@@ -19,9 +19,6 @@ var maplib = ( function(piechart) {"use strict";
         albersProj = 'EPSG:3005';
         webMercatorProj = 'EPSG:900913';
         // EPSG:3005
-        
-        
-        
         
         
         // var muleDeerData = [{
@@ -44,11 +41,6 @@ var maplib = ( function(piechart) {"use strict";
             // anchorPrefix:'muledeerlab'
         // }
                 // pieChart.addData(muleDeerData, muleDeerConfig);
-        
-        
-        
-        
-        
         
 
         wfsStyleMap = new OpenLayers.StyleMap({
@@ -437,7 +429,7 @@ var maplib = ( function(piechart) {"use strict";
         function makeD3Report(lyrName, areaReport, keyValueForUndefinedArea) {
             // step 1 define an xmlhttp request, and a handler.  The handler
             // will then parse the
-            var sld, pieChart, styles, reportData, reportRecord, configObj;
+            var sld,  styles, reportData, reportRecord, configObj;
             console.log("layer name is: " + lyrName);
             sld = getSLD(lyrName);
             styles = extractStylesFromSLD(sld, lyrName);
@@ -469,7 +461,7 @@ var maplib = ( function(piechart) {"use strict";
             configObj.anchorPrefix = 'muleDeer';
             // add the report tothe div=reportMainPanel 
             pieChart.addData(reportRecord, configObj);
-            pieChart.createCharts(600, 'reportMainPanel');
+            pieChart.createCharts('reportMainPanel');
         }
         
         function combineSLDandReportData(areaReport, styles, lyrName, keyValueForUndefinedArea) {
@@ -734,7 +726,9 @@ var maplib = ( function(piechart) {"use strict";
             // get the information underneath the drawn polygon with a
             // wfs query in a web worker
             // A) define a filter
-            var i, junk, drawingGeom, spatialFilterParams, filter_spatial, compObj, filter_conditional, allfilters, filterComb, dataDict, atribFilter, filters, finalFilter, layers;
+            var i, junk, drawingGeom, spatialFilterParams, filter_spatial, compObj, 
+                filter_conditional, allfilters, filterComb, dataDict, atribFilter,
+                filters, finalFilter, layers;
             filters = [];
             addAnalysisData();
             //test_adddummyPolygon();
@@ -909,7 +903,7 @@ var maplib = ( function(piechart) {"use strict";
         mapObj.initMap = function(pieChrt) {
             // OSM uses projection 3857, but there is no def available for this so
             // manually adding it.
-            piechart = pieChrt;
+            pieChart = pieChrt;
             Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
 
             console.log("map is getting initialized...");
