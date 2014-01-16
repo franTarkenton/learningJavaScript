@@ -15,7 +15,65 @@
     <!-- <script src="http://d3js.org/d3.v3.min.js"></script> -->    <script src="../lib/OpenLayers.js"></script>
 
     <script>
+    
+    
+    
+    
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
+        
+        cnt = 1;
+        
+        function objectToConsole(input_Object, indent) {
+            // super handy method, don't want to lose this. Useful for debugging
+            // and figuring out stuff.
+            var keys, i, key, value, spaces, spacesInIndent, isObj, bracketStart, bracketEnd;
+            cnt += 1;
+            if (cnt > 20) {
+                return;
+            }
+            
+            spacesInIndent = 4;
+            bracketStart = '{';
+            bracketEnd = '}';
+            if (typeof indent === 'undefined') {
+                indent = 0;
+            }
+            isObj = false;
+            //console.log(typeof indent);
+            spaces = Array(indent).join(' ');
+            //console.log("spaces: " + spaces);
+            keys = Object.keys(input_Object);
+            for ( i = 0; i < keys.length; i += 1) {
+                key = keys[i];
+                value = input_Object[key];
+                //console.log("value" + value);
+                if (value === null || key === 'parent') {
+                    //console.log("null in value");
+                    //console.log("type of value: " + typeof value);
+                    console.log(spaces + key + ' : ' + value);
+                }
+                else if (( typeof value).toString() === 'object') {
+                    if (Object.prototype.toString.call(value) === '[object Array]') {
+                        bracketStart = '[';
+                        bracketEnd = ']';
+                    }
+                    console.log(spaces + key + ' : ' + bracketStart);
+                    indent = indent + spacesInIndent;
+                    objectToConsole(value, indent);
+                    indent = indent - spacesInIndent;
+                    spaces = Array(indent).join(' ');
+                    console.log(spaces + bracketEnd + ' ');
+                } else {
+                    console.log(spaces + key + ' : ' + value);
+                }
+            }
+            if (isObj) {
+                //indent = indent - spacesInIndent;
+            }
+        }
+        
+        
+        
 
         /// shows what I want to do: http://wygoda.net/blog/wfs-without-map-with-openlayers
         // need to see if I can put together a manual query to a wfs layer
@@ -35,13 +93,25 @@
             });
                 
         // next spatial filter, and combine with the filter above
-        polygonDrawn = 'POLYGON((-13445733.370537 6369380.0116477,-13443019.856033 6369571.1042184,-13442331.922779 6367354.4303985,-13444816.126198 6366972.2452571,-13445733.370537 6369380.0116477))'; 
+        //polygonString = 'POLYGON((-13445733.370537 6369380.0116477, -13443019.856033 6369571.1042184, -13442331.922779 6367354.4303985, -13444816.126198 6366972.2452571, -13445733.370537 6369380.0116477))';
+        polygonString = 'POLYGON((-13449687.195257 6367583.7414833,-13447661.614008 6367583.7414833,-13446400.403042 6365672.8157764,-13446438.621556 6364067.6381827,-13449648.976743 6364220.5122392,-13450910.18771 6366055.0009178,-13449687.195257 6367583.7414833))';
+
+        wkt = new OpenLayers.Format.WKT();
+        wkt.externalProjection = new OpenLayers.Projection('EPSG:900913');
+        wkt.internalProjection = new OpenLayers.Projection('EPSG:900913');
+        polygon = wkt.read(polygonString);
+        console.log('area: ' + polygon.geometry.getArea());
+        console.log('geom: ' + polygon.geometry);
+        console.log("calcedbounds: " + polygon.geometry.calculateBounds());
+        console.log("bounds: " + polygon.geometry.getBounds());
+        
         spatialFilterParams =  {
             type : OpenLayers.Filter.Spatial.INTERSECTS,
-            value : polygonDrawn,
+            value : polygon.geometry,
             projection : new OpenLayers.Projection('EPSG:900913')
         };
         filter_spatial = new OpenLayers.Filter.Spatial(spatialFilterParams);
+        
         combinedFilter = new OpenLayers.Filter.Logical({
                             filters : [attributeFilter, filter_spatial],
                             type : OpenLayers.Filter.Logical.AND
@@ -60,5 +130,8 @@
         }
         });
         console.log("here");
+        
+
+        
     </script>
 </body> 
