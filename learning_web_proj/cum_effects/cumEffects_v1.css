@@ -234,6 +234,21 @@ body {
 #mainSection {
     overflow: hidden;
 }
+
+#prevbackgrounProcessing {
+	margin-bottom: 160px;
+}
+
+#backgrounProcessing {
+	margin-top: 160px;
+}
+
+#backgrounProcessingStatus {
+	text-decoration:none;
+	font: italic 10pt Arial;
+	
+}
+
 .button {
     display: inline-block;
     white-space: nowrap;
@@ -286,8 +301,10 @@ body {
 .olControlMousePosition {
 	position:relative;
 	top: 88%;
-	
+	font: bold 12px Arial;
+	/*text-shadow: 1px 1px white, -1px 1px white, -1px -1px white;*/
 }
+
 
 
 /*Jquery over rides to make this view look right

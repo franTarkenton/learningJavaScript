@@ -17,31 +17,7 @@ var maplib = ( function() {"use strict";
         gce_wms = "http://" + gce_domain + "/geoserver/wms";
         gce_ows = "http://" + gce_domain + "/geoserver/ows";
         albersProj = 'EPSG:3005';
-        webMercatorProj = 'EPSG:900913';
-        // EPSG:3005
-        
-        
-        // var muleDeerData = [{
-            // label : 'Moderate',
-            // area : 23422,
-            // color : '#FF9254'
-        // }, {
-            // label : 'High',
-            // area : 61231,
-            // color : '#FF2D12'
-        // }, {
-            // label : 'Low',
-            // area : 5820,
-            // color : '#FFC98F'
-        // }];
-//         
-        // var muleDeerConfig = {
-            // label: 'Mule Deer Risk', 
-            // units: 'ha',
-            // anchorPrefix:'muledeerlab'
-        // }
-                // pieChart.addData(muleDeerData, muleDeerConfig);
-        
+        webMercatorProj = 'EPSG:900913';        
 
         wfsStyleMap = new OpenLayers.StyleMap({
             "default" : new OpenLayers.Style({
@@ -51,6 +27,11 @@ var maplib = ( function() {"use strict";
             })
         });
         
+        /**
+         * simple debugging function, spits objects to the console.  Careful when 
+         * objects contain recursive relationships as can result in a never ending 
+         * loop. 
+         */
         function objectToConsole(obj, indent) {
             // super handy method, don't want to lose this. Useful for debugging
             // and figuring out stuff.
@@ -89,7 +70,6 @@ var maplib = ( function() {"use strict";
             }
         }
 
-
         function layerExists(lyrName) {
             var retVal, i, curLyr;
             retVal = false;
@@ -110,6 +90,15 @@ var maplib = ( function() {"use strict";
             // console.log("bounds are: " + bounds.toBBOX());
             // console.log("new feature was created: " + feat.geometry + ' ' + feat.attributes + ' ' + feat.feature.geometry);
             console.log("doneFunc called");
+        }
+        
+        function updateBackgroundProcessingStatus(statusMessage) {
+            var elem2Search4, elem;
+            elem2Search4 = 'backgrounProcessingStatus';
+            elem = document.getElementById(elem2Search4);
+            elem.innerHTML = statusMessage;
+            console.log("elem is: " + elem);
+            //.innerHTML(statusMessage);
         }
 
         function addDrawingLayer() {
@@ -150,6 +139,8 @@ var maplib = ( function() {"use strict";
             // polygon has been completed, Now what do we want to do with it.
             console.log("finished drawing the polygon");
             deactivateDrawingControl();
+            updateBackgroundProcessingStatus('Retreiving overlapping features...');
+
             // The object that is returned not sure what kind it is,
             // but obj.feature contains the feature that was just added.
             // or in this case feat.feature.
@@ -161,6 +152,7 @@ var maplib = ( function() {"use strict";
             // later on fix this limitation.
             console.log("geom of draw feature: " + feat);
             console.log("geom of drawing feature" + drawingLayer.features[0].geometry);
+            mapObj.reportOnDrawing();
         }
 
         function addAnalysisData(addToMap) {
@@ -393,6 +385,7 @@ var maplib = ( function() {"use strict";
             // the following url will retrieve that file for a particular layer
             // next step is to take what is retreived by that and parse it using
             // the parser.
+            
             makeD3Report(srcLayer, sumObj, 'undefinedArea');
         }
         
@@ -649,7 +642,9 @@ var maplib = ( function() {"use strict";
             // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
             // read from the response and send the features to the
             // intersect method.
+            
             var srcLayer, analysisDataRec;
+            updateBackgroundProcessingStatus("Calculating Area Intersections...");
             if (response.error) {
                 //TODO: should figure out what to do if an error is encountered here. Exceptions?
                 objectToConsole(response);
@@ -713,6 +708,8 @@ var maplib = ( function() {"use strict";
                 filter_conditional, allfilters, filterComb, dataDict, atribFilter,
                 filters, finalFilter, layers;
             filters = [];
+            // TODO: THis next method needs to be changed so that it queries through the protocol instead of adding a wfs layer.  This should 
+            //       make it much more efficient.  Try setting the format to JSON.
             addAnalysisData();
             //test_adddummyPolygon();
             drawingGeom = drawingLayer.features[0].geometry;
@@ -800,6 +797,12 @@ var maplib = ( function() {"use strict";
             drawControl.activate();
             drawingLayer.events.register('featureadded', ' ', finishedDrawingPolygon);
         };
+        
+        mapObj.drawSubmitAndVisualize = function drawSubmitAndVisualize(drawMethod) {
+            updateBackgroundProcessingStatus('drawing AOI...');
+            clearAOI();
+            mapObj.drawAOI(drawMethod);
+        };
 
         /**
          * Adds a list of basemaps to the map.  Currently set up to
@@ -884,9 +887,10 @@ var maplib = ( function() {"use strict";
         };
 
         mapObj.initMap = function(pieChrt) {
+            // recieving a reference to the pieChart api.
+            pieChart = pieChrt;
             // OSM uses projection 3857, but there is no def available for this so
             // manually adding it.
-            pieChart = pieChrt;
             Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
 
             console.log("map is getting initialized...");

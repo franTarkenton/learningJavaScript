@@ -56,11 +56,10 @@
                     <div id='accordion'>
                         <h4>Draw Reporting Area</h4>
                         <div>
-                            <button class='button'  type="button" onclick="maplib.drawAOI('free')" style="width: 110px;font: bold .8em Arial;">
-                                
-                                Draw Freehand
+                            <button class='button'  type="button" onclick="maplib.drawSubmitAndVisualize('free')" style="width: 90px;font: bold .8em Arial;">
+                                Spatial Query
                             </button>
-                            <!-- onclick="drawAOI('poly')" -->
+                            <!-- <!-- onclick="drawAOI('poly')" 
                             <button class='button' type="button" onclick="maplib.drawAOI('poly')" style="width: 110px;font: bold .8em Arial;">
                                 Draw Polygon
                             </button>
@@ -69,7 +68,7 @@
                             </button>
                             <button class='button' type="button" onclick="maplib.reportOnDrawing()" style="width: 110px;font: bold .8em Arial;">
                                 Submit for Analysis
-                            </button>
+                            </button> -->
                         </div>
                         <h4> Layer Controls</h4>
                         <div>
@@ -79,12 +78,16 @@
                             </button>
                         </div>
                     </div>
+                    <div id='prevbackgrounProcessing'></div>
+                    <h2 id='backgrounProcessing'> Background Processing </h2>
+                    <h3><div id='backgrounProcessingStatus'>None</div></h3>
                 </div>
                 <div id='mainpanel'>
                     <div id="map" ></div>
                 </div>
 
             </div>
+            <div id='statusReports'></div>
             <div id='reportMainPanel'>
                 <!-- nothing for now -->
             </div>
