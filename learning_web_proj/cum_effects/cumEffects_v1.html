@@ -35,6 +35,7 @@
         <script src='http://spatialreference.org/ref/sr-org/6864/proj4js/'></script>
         <script src='../d3_learning/pieChart.js'></script>
         <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src='../lib/spin.min.js'></script>
         <script>
             $(function() {
                 $("#accordion").accordion({ collapsible: true,
@@ -80,7 +81,7 @@
                     </div>
                     <div id='prevbackgrounProcessing'></div>
                     <h2 id='backgrounProcessing'> Background Processing </h2>
-                    <h3><div id='backgrounProcessingStatus'>None</div></h3>
+                    <div id='backgrounProcessingStatus'>None</div>
                 </div>
                 <div id='mainpanel'>
                     <div id="map" ></div>
@@ -96,8 +97,7 @@
             // following if only using hte simpleMap.js file initMap(); use this
             // if using simpleMap_modular.js file
             //var mapObj = new maplib();
-            
-            maplib.initMap(pieChart);
+            maplib.initMap(pieChart, Spinner);
             //mapObj.someFunc();
             maplib.addMapControls();
         </script>

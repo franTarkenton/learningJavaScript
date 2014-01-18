@@ -14,19 +14,75 @@
 var pieChart = (
     function() {"use strict";
 
-        var pieChrt, angleScale, svg, pi, i, radianOffSet, svg, svgParams,
+        var pieChrt, angleScale, svg, pi, radianOffSet, svg, svgParams,
             minimumChartSize, spaceBetween, chartWidth, chartHeight,
             dataRadiusScale, minChrtDims,  percent2WidthDim, 
             percent2HeightDim, numCols, numRows, chartsPositionalInfo, 
             domainLabelValues, chartCircumfrence;
-        pieChrt = {}; // namespace
-        svgParams = {};
-        pieChrt.chartDataSets = []; // populated with an array of data sets.  Each element in this array  represents a chart to be drawn
-        pieChrt.chartConfigs = []; // populated with an array of config parameters
-        minChrtDims = 300;
-        spaceBetween = 7;
-        chartsPositionalInfo = [];
-        chartCircumfrence = 1;  // where 1 is 180 and 2 = 360 degrees.
+        
+        pieChrt = {};
+        
+        function resetParams() {
+             // namespace
+            svgParams = {};
+            pieChrt.chartDataSets = []; // populated with an array of data sets.  Each element in this array  represents a chart to be drawn
+            pieChrt.chartConfigs = []; // populated with an array of config parameters
+            minChrtDims = 300;
+            spaceBetween = 7;
+            chartsPositionalInfo = [];
+            chartCircumfrence = 1;  // where 1 is 180 and 2 = 360 degrees.
+            domainLabelValues = null;
+            numRows = null;
+            numCols = null;
+            percent2HeightDim = null;
+            percent2WidthDim = null;
+            dataRadiusScale= null;
+            chartHeight= null;
+            chartWidth = null;
+            minimumChartSize= null;
+            svg= null;
+            radianOffSet= null;
+            pi = null;
+            angleScale= null;
+        }
+        
+        function objectToConsole(obj, indent) {
+            // super handy method, don't want to lose this. Useful for debugging
+            // and figuring out stuff.
+            var keys, i, key, value, spaces, spacesInIndent, isObj, bracketStart, bracketEnd;
+            spacesInIndent = 4;
+            bracketStart = '{';
+            bracketEnd = '}';
+            if (typeof indent === 'undefined') {
+                indent = 0;
+            }
+            isObj = false;
+            //console.log(typeof indent);
+            spaces = Array(indent).join(' ');
+            //console.log("spaces: " + spaces);
+            keys = Object.keys(obj);
+            for ( i = 0; i < keys.length; i += 1) {
+                key = keys[i];
+                value = obj[key];
+                if (( typeof value).toString() === 'object') {
+                    if (Object.prototype.toString.call(value) === '[object Array]') {
+                        bracketStart = '[';
+                        bracketEnd = ']';
+                    }
+                    console.log(spaces + key + ' : ' + bracketStart);
+                    indent = indent + spacesInIndent;
+                    objectToConsole(value, indent);
+                    indent = indent - spacesInIndent;
+                    spaces = Array(indent).join(' ');
+                    console.log(spaces + bracketEnd + ' ');
+                } else {
+                    console.log(spaces + key + ' : ' + value);
+                }
+            }
+            if (isObj) {
+                //indent = indent - spacesInIndent;
+            }
+        }
         
         /** 
          * When this method is called we know how many charts need to get created.  This method will 
@@ -523,7 +579,7 @@ var pieChart = (
                 .style("font-weight", 'bold')
                 .style("font-family", 'Verdana')
                 .attr("xlink:href", function(d, i) { return "#" + anchorPrefix + '_scaleText' + i;}) 
-                .text(function(d) { return d / 10000;});
+                .text(function(d) { return d ;}); //  return d / 10000;
         }
         
         function drawGaugeLabelText(gaugeLabelArc, groups, chrtLoc, config, unitData) {
@@ -588,6 +644,9 @@ var pieChart = (
             var config = pieChrt.chartConfigs[dataPosition];
             var chrtLoc = chartsPositionalInfo[dataPosition];
             var groups = defineGroupedElements();
+            
+            objectToConsole(data);
+            
             // drawing the data
             var dataArc = defineDataArc(data);
             drawDataArc(data, dataArc, groups.dataArcs, chrtLoc);
@@ -648,8 +707,15 @@ var pieChart = (
          */
         pieChrt.addData = function(inputData, config) {
             // TODO: should do some verification that the object complies with the required schema
+            if ((typeof pieChrt.chartDataSets).toString() === 'undefined') {
+                resetParams();
+            }
             pieChrt.chartDataSets.push(inputData);
             pieChrt.chartConfigs.push(config);
+        };
+        
+        pieChrt.reset = function() {
+            resetParams();
         };
         
         /**
@@ -670,8 +736,6 @@ var pieChart = (
             junkvar = divelem.getBoundingClientRect().width;
             console.log("junkvar", junkvar)
 
-            
-            
             if (typeof w === 'undefined') {
                 w = d3.select('#' + div).style('width');
                 w = w.replace(/[^\d.-]/g, '');
@@ -680,6 +744,10 @@ var pieChart = (
             console.log("w is" + w);
             svgParams.width = w;
             defineChartSize(svgParams.width);
+            
+            d3.select('#' + div).select('svg').remove();
+            
+            
             svg = d3.select('#' + div)
                 .append("svg")
                 .attr("width", svgParams.width)
@@ -687,7 +755,7 @@ var pieChart = (
                 
             console.log("svg width:" + svgParams.width);
             console.log("svg height:" + svgParams.height);
-            
+            console.log("charts")
             // Iterating over the data used to draw each chart.
             for (i=0; i<pieChrt.chartDataSets.length; i+=1) {
                 configureScaleFunctions(i);

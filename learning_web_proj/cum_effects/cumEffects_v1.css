@@ -244,9 +244,8 @@ body {
 }
 
 #backgrounProcessingStatus {
+	font: italic 11pt Arial;
 	text-decoration:none;
-	font: italic 10pt Arial;
-	
 }
 
 .button {

@@ -2,12 +2,18 @@
 // self-invoking, anonymous function:
 
 /*global alert: false, confirm: false, console: false, Debug: false, opera: false, prompt: false, WSH: false */
+
 var maplib = ( function() {"use strict";
         OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
 
-        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, infoControl, albersProj, wfsStyleMap, webMercatorProj, analysisData, gce_domain, gce_ows, pieChart;
+        var mapObj, map, drawingLayerName, drawingLayer, gce_ip, 
+            gce_wfs, gce_wms, muleDeerWFS, muleDeerProtocolWFS, 
+            infoControl, albersProj, wfsStyleMap, webMercatorProj, 
+            analysisData, gce_domain, gce_ows, pieChart;
 
         mapObj = {};
+
+        
 
         // local variables
         drawingLayerName = 'tempdrawings';
@@ -92,11 +98,22 @@ var maplib = ( function() {"use strict";
             console.log("doneFunc called");
         }
         
-        function updateBackgroundProcessingStatus(statusMessage) {
+        function updateBackgroundProcessingStatus(statusMessage, inProgress) {
+            var spinnerOpts, spin;
+            spinnerOpts = {
+                lines: 11, length: 3, width: 3, radius: 4, corners: 0,
+                 rotate: 13, trail: 60, speed: 1.0, left: 145, top: -5
+            };
+
             var elem2Search4, elem;
             elem2Search4 = 'backgrounProcessingStatus';
             elem = document.getElementById(elem2Search4);
             elem.innerHTML = statusMessage;
+            if (inProgress) {
+                // make the text flash!
+                spin = new Spinner(spinnerOpts).spin(elem);
+            }
+            
             console.log("elem is: " + elem);
             //.innerHTML(statusMessage);
         }
@@ -139,7 +156,7 @@ var maplib = ( function() {"use strict";
             // polygon has been completed, Now what do we want to do with it.
             console.log("finished drawing the polygon");
             deactivateDrawingControl();
-            updateBackgroundProcessingStatus('Retreiving overlapping features...');
+            updateBackgroundProcessingStatus('Retreiving overlapping features...', true);
 
             // The object that is returned not sure what kind it is,
             // but obj.feature contains the feature that was just added.
@@ -153,6 +170,24 @@ var maplib = ( function() {"use strict";
             console.log("geom of draw feature: " + feat);
             console.log("geom of drawing feature" + drawingLayer.features[0].geometry);
             mapObj.reportOnDrawing();
+        }
+        
+        function getWFSProtocolConfigs() {
+            var i, protocolArray, wfsParams, wmsName, tmp;
+            protocolArray = [];
+            // extracting the wfs info from the analysisData object
+            for ( i = 0; i < analysisData.length; i += 1) {
+                if (analysisData[i].hasOwnProperty("wfsProtocolParams")) {
+                    wmsName = analysisData[i].wmsName;
+                    wfsParams = analysisData[i].wfsProtocolParams;
+                    tmp = {name: wmsName, wfsProtocolParams: wfsParams};
+                    if (analysisData[i].hasOwnProperty("filter")) {
+                        tmp.filter = analysisData[i].filter;
+                    }
+                    protocolArray.push(tmp);
+                }
+            }
+            return protocolArray;
         }
 
         function addAnalysisData(addToMap) {
@@ -307,18 +342,30 @@ var maplib = ( function() {"use strict";
          */
         function calcIntersection(srcLayer, summaryColumn, features) {
             // TODO: need to come back and add logic to make sure that we actually have a drawing feature to work with
-            var i, jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers, intersectJSTSGeom, albersProjection, intersectFeature, webMercatorProj, curFeatureJSTSGeom, intersectGeom, sumObj, sumColumnValue, area, totalAreaInInterest;
+            var i, jstsReader, intersectFeature_albers, intersectGeomString, intersectGeomAlbers,
+                intersectJSTSGeom, albersProjection, intersectFeature, webMercatorProj, 
+                curFeatureJSTSGeom, intersectGeom, sumObj, sumColumnValue, area,
+                totalAreaInInterest, cloneGeom;
             totalAreaInInterest = 0;
             console.log("processing this number of features: " + features.length);
             jstsReader = new jsts.io.WKTReader();
 
             intersectFeature = drawingLayer.features[0];
-            intersectFeature.geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
-            //console.log("drawinglayer in albers?: " + intersectFeature);
-
-            intersectGeomString = intersectFeature.geometry.toString();
+            
+            
+            // Very friggin strange.  Even though this feature gets removed somehow it get remembered
+            // and the second time through the loop the transform function was working on a feature
+            // that was already being transformed.
+            cloneGeom = intersectFeature.geometry.clone();
+            
+            
+            console.log("feature geometry before transform: " + intersectFeature.geometry.toString());
+            console.log('number of features in drawing layer: ' + drawingLayer.features.length)
+            cloneGeom.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
+            intersectGeomString = cloneGeom.toString();
+           
             intersectJSTSGeom = jstsReader.read(intersectGeomString);
-            //console.log("intersectGeomString: " + intersectGeomString);
+            console.log("intersectGeomString: " + intersectGeomString);
 
             albersProjection = new OpenLayers.Projection(albersProj);
             webMercatorProj = new OpenLayers.Projection('EPSG:900913');
@@ -328,7 +375,7 @@ var maplib = ( function() {"use strict";
                 // area calculations of the underlying GIS system.
                 // if the geometry was printed now will return in albers coordinates.
                 features[i].geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
-
+                console.log("curfeature: " + jstsReader.read(features[i].geometry.toString()));
                 curFeatureJSTSGeom = jstsReader.read(features[i].geometry.toString());
                 consoleAreaReport(features[i], 'Shape_Area', 'ATT_2_VAL');
                 // is it contained?
@@ -370,6 +417,7 @@ var maplib = ( function() {"use strict";
                 // now create the report:
                 totalAreaInInterest = totalAreaInInterest + area;
             }
+            
             console.log("totalAreaInInterest:" + totalAreaInInterest);
             console.log("submitted poly area: " + intersectFeature.geometry.getArea())
 
@@ -385,7 +433,7 @@ var maplib = ( function() {"use strict";
             // the following url will retrieve that file for a particular layer
             // next step is to take what is retreived by that and parse it using
             // the parser.
-            
+            cloneGeom.destroy();
             makeD3Report(srcLayer, sumObj, 'undefinedArea');
         }
         
@@ -430,14 +478,21 @@ var maplib = ( function() {"use strict";
             //       able to report on many layers.
             reportData = [];
             reportRecord = combineSLDandReportData(areaReport, styles, lyrName, keyValueForUndefinedArea);
+            console.log("*****************************************");
+            console.log("        DEBUG STUFF!");
+            console.log("*****************************************");
+            console.log("data to report on is: " + reportRecord);
             objectToConsole(reportRecord);
             configObj = {};
             configObj.label = lyrName;
             configObj.units = 'meters';
             configObj.anchorPrefix = 'muleDeer';
             // add the report tothe div=reportMainPanel 
+            updateBackgroundProcessingStatus("drawing chart...", true);
+            pieChart.reset();
             pieChart.addData(reportRecord, configObj);
             pieChart.createCharts('reportMainPanel');
+            updateBackgroundProcessingStatus("Complete!", false)
         }
         
         function combineSLDandReportData(areaReport, styles, lyrName, keyValueForUndefinedArea) {
@@ -580,7 +635,19 @@ var maplib = ( function() {"use strict";
          * Remove all the polygons in the drawing layer
          */
         mapObj.clearAOI = function clearAOI() {
-            drawingLayer.removeAllFeatures();
+            var elem;
+            if ((typeof drawingLayer).toString() !== 'undefined')  {
+                drawingLayer.removeAllFeatures();
+                console.log("number of features in drawing layer is: " + drawingLayer.features.length);
+            }
+            // check and see if there is a chart from a previously 
+            // run report and remove it!
+            elem = document.getElementById('reportMainPanel');
+            elem.innerHTML = '';
+            while (elem.lastChild) {
+                svg.removeChild(svg.lastChild);
+            }
+            pieChart.reset();
         };
 
         function createIdentifyControl() {
@@ -642,9 +709,9 @@ var maplib = ( function() {"use strict";
             // TODO: should come back and add a visual widget to show that processing is taking place behind the scenes.
             // read from the response and send the features to the
             // intersect method.
-            
+            console.log("AnalysisDataSelectionCallBack called");
             var srcLayer, analysisDataRec;
-            updateBackgroundProcessingStatus("Calculating Area Intersections...");
+            updateBackgroundProcessingStatus("Calculating Area Intersections...", true);
             if (response.error) {
                 //TODO: should figure out what to do if an error is encountered here. Exceptions?
                 objectToConsole(response);
@@ -685,6 +752,37 @@ var maplib = ( function() {"use strict";
             }
             return analysisDataRec;
         }
+        
+        mapObj.reportOnDrawing = function reportONDrawing() {
+            var i, wfsConfigs, protocol, atribFilter, wfsConfig, spatialFilterParams,
+                spatialFilter, filter;
+            wfsConfigs = getWFSProtocolConfigs();
+            console.log('wfsConfigs' + wfsConfigs);
+            objectToConsole(wfsConfigs);
+            for (i=0; i<wfsConfigs.length; i+=1) {
+                wfsConfig = wfsConfigs[i].wfsProtocolParams;
+                protocol = new OpenLayers.Protocol.WFS(wfsConfig);
+                spatialFilterParams = {
+                    type : OpenLayers.Filter.Spatial.INTERSECTS,
+                    value : drawingLayer.features[0].geometry,
+                    projection : new OpenLayers.Projection(webMercatorProj)
+                };
+                spatialFilter = new OpenLayers.Filter.Spatial(spatialFilterParams);
+                if (wfsConfigs[i].hasOwnProperty("filter")) {
+                    filter = new OpenLayers.Filter.Logical({
+                                filters : [wfsConfigs[i].filter, spatialFilter],
+                                type : OpenLayers.Filter.Logical.AND
+                            });
+                } else {
+                    filter = spatialFilter;
+                }
+                protocol.read({
+                    filter: filter, 
+                    callback: AnalysisDataSelectionCallBack
+                });
+                // when finished with the protocol call protocol.destroy();
+            }
+        };
 
         /**
          * This method is called after a drawing polygon has been defined.  The method
@@ -700,7 +798,7 @@ var maplib = ( function() {"use strict";
          *    analysisData object, and assigns the filter to the wfs protocol, and
          *    also adds the callback AnalysisDataSelectionCallBack
          */
-        mapObj.reportOnDrawing = function reportOnDrawing() {
+        mapObj.reportOnDrawing_old = function reportOnDrawing_old() {
             // get the information underneath the drawn polygon with a
             // wfs query in a web worker
             // A) define a filter
@@ -799,8 +897,8 @@ var maplib = ( function() {"use strict";
         };
         
         mapObj.drawSubmitAndVisualize = function drawSubmitAndVisualize(drawMethod) {
-            updateBackgroundProcessingStatus('drawing AOI...');
-            clearAOI();
+            updateBackgroundProcessingStatus('Draw the AOI...', true);
+            mapObj.clearAOI();
             mapObj.drawAOI(drawMethod);
         };
 
@@ -886,9 +984,9 @@ var maplib = ( function() {"use strict";
             }));
         };
 
-        mapObj.initMap = function(pieChrt) {
+        mapObj.initMap = function(piechrt, Spinner) {
             // recieving a reference to the pieChart api.
-            pieChart = pieChrt;
+            pieChart = piechrt;
             // OSM uses projection 3857, but there is no def available for this so
             // manually adding it.
             Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
