@@ -375,7 +375,7 @@ var maplib = ( function() {"use strict";
                 // area calculations of the underlying GIS system.
                 // if the geometry was printed now will return in albers coordinates.
                 features[i].geometry.transform(new OpenLayers.Projection("EPSG:900913"), new OpenLayers.Projection(albersProj));
-                console.log("curfeature: " + jstsReader.read(features[i].geometry.toString()));
+                //console.log("curfeature: " + jstsReader.read(features[i].geometry.toString()));
                 curFeatureJSTSGeom = jstsReader.read(features[i].geometry.toString());
                 consoleAreaReport(features[i], 'Shape_Area', 'ATT_2_VAL');
                 // is it contained?
@@ -721,8 +721,6 @@ var maplib = ( function() {"use strict";
                 console.log(response.error.exceptionReport.exceptions[0].texts[0]);
             }
             console.log("Callback called!");
-            //objectToConsole(response);
-            //objectToConsole(response.features[0].attributes);
             // its ugly and risky but this looks like the only way I can see to get the
             // layer from the response object
             srcLayer = response.features[0].fid.split('.')[0];
