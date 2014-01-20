@@ -485,7 +485,7 @@ var maplib = ( function() {"use strict";
             objectToConsole(reportRecord);
             configObj = {};
             configObj.label = lyrName;
-            configObj.units = 'meters';
+            configObj.units = 'hectares';
             configObj.anchorPrefix = 'muleDeer';
             // add the report tothe div=reportMainPanel 
             updateBackgroundProcessingStatus("drawing chart...", true);
@@ -512,7 +512,7 @@ var maplib = ( function() {"use strict";
                 } else {
                     record = {};
                     record.label = atribVal;
-                    record.area = areaReport[atribVal]
+                    record.area = areaReport[atribVal] / 10000;
                     record.color = styles[atribVal].fillColor
                     data.push(record);
                 }
