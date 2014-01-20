@@ -295,33 +295,36 @@ var maplib = ( function() {"use strict";
                 }),
                 summaryColumn : "RISK"
             };
-            ds2 = {
-                wmsName : 'Study Area Boundary',
-                wmsURL : gce_wms,
-                wmsParams : {
-                    layers : 'cum_effects:study_bndry',
-                    STYLES : '',
-                    format : 'image/png',
-                    tiled : true,
-                    tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
-                    transparent : true
-                },
-                wmsOptions : {
-                    opacity : 0.35,
-                    buffer : 0,
-                    displayOutsideMaxExtent : true,
-                    isBaseLayer : false
-                },
-
-            };
-            analysisData = [ds1, ds2];
+            // ds2 = {
+                // wmsName : 'Study Area Boundary',
+                // wmsURL : gce_wms,
+                // wmsParams : {
+                    // layers : 'cum_effects:study_bndry',
+                    // STYLES : '',
+                    // format : 'image/png',
+                    // tiled : true,
+                    // tilesOrigin : map.maxExtent.left + ',' + map.maxExtent.bottom,
+                    // transparent : true
+                // },
+                // wmsOptions : {
+                    // opacity : 0.35,
+                    // buffer : 0,
+                    // displayOutsideMaxExtent : true,
+                    // isBaseLayer : false
+                // }
+            // };
+            //analysisData = [ds1, ds2];
+            analysisData = [ds1];
         }
 
         function addCumEffectsLayers_WMS() {
             var i, lyr, url;
             console.log("analysisData" + analysisData)
             for ( i = 0; i < analysisData.length; i += 1) {
-                if (analysisData[i].hasOwnProperty("wmsName") && analysisData[i].hasOwnProperty("wmsURL") && analysisData[i].hasOwnProperty("wmsParams") && analysisData[i].hasOwnProperty("wmsOptions")) {
+                if (analysisData[i].hasOwnProperty("wmsName") &&
+                    analysisData[i].hasOwnProperty("wmsURL") &&
+                    analysisData[i].hasOwnProperty("wmsParams") &&
+                    analysisData[i].hasOwnProperty("wmsOptions")) {
                     lyr = new OpenLayers.Layer.WMS(analysisData[i].wmsName, analysisData[i].wmsURL, analysisData[i].wmsParams, analysisData[i].wmsOptions);
                     console.log("getting url...");
                     map.addLayer(lyr);
