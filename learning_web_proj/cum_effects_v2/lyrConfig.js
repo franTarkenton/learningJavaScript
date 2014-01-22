@@ -4,18 +4,30 @@
  * are part of the application
  * @namespace lyrConfig
  */
-lyrConfig = (function(google) {
+var lyrConfig = (function(google) {
     'use strict';
 	var lyrConfig, googleMapTypes;
 	lyrConfig = {};
     
+   /** 
+    * @typedef googleMapConfigsArray
+    * @type {object}
+    * @property {string} label - The name for the type of map
+    * @property {object} params - object that can be fed to the options parameter when creating a google layer.
+    * @property {number} params.numZoomLevels - number of zoom levels to use for this basemap
+    * @property {number} params.MAX_ZOOM_LEVEL - The maximum number of allowable zoom levels
+    * @property {object} params.type - The google map type.  see @link https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes
+    */
     
+
     /**
      * returns an array of objects that describing the different 
      * google maps that can be used as base maps
      * @name lyrConfig#getGoogleMapTypeConfigs
      * @function
      * @private
+     * @returns {googleMapConfigsArray} an object describing the different google map layers to create.
+     * @memberof lyrConfig 
      */
     function getGoogleMapTypeConfigs() {
         var types, streetMaps, hybrid;
@@ -44,12 +56,27 @@ lyrConfig = (function(google) {
         return [streetMaps, hybrid, sat];
     }
     
+    
+    /**
+     * @name  test2
+     * @function
+     * @memberof lyrConfig
+     */
+    lyrConfig.test2 = function (test) {
+        console.log("nothing");
+    };
+    
+    
     /**
      * test method does this work in jsdoc
      * @name lyrConfig#testMethod
      * @function
+     * @param {Object} test
+     * @param {String} test.param1 - This is a parameter
+     * @param {number} test.param2 - another examples
+     * @memberof lyrConfig
      */
-    lyrConfig.testMethod = function () {
+    lyrConfig.testMethod = function (test) {
         console.log("nothing")
     };
     
