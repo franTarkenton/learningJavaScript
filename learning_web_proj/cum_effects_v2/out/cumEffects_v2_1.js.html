@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>Cumulative Effects Demo Source: C:/kevin/proj/p14_0169_Javascript/learningJavaScript/learning_web_proj/cum_effects_v2/lyrConfig.js</title>
+	<title>Cumulative Effects Demo Source: C:/kevin/proj/p14_0169_Javascript/learningJavaScript/learning_web_proj/cum_effects_v2/cumEffects_v2_1.js</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -29,7 +29,7 @@
 					<ul class="dropdown-menu ">
 						
 						<li>
-							<a href="lyrConfig.html">lyrConfig</a>
+							<a href="cumuEff.html">cumuEff</a>
 						</li>
 						
 
@@ -49,94 +49,103 @@
 					
 
 
-		<h1 class="page-title">Source: C:/kevin/proj/p14_0169_Javascript/learningJavaScript/learning_web_proj/cum_effects_v2/lyrConfig.js</h1>
+		<h1 class="page-title">Source: C:/kevin/proj/p14_0169_Javascript/learningJavaScript/learning_web_proj/cum_effects_v2/cumEffects_v2_1.js</h1>
     
     <section>
         <article>
             <pre class="sunlight-highlight-javascript linenums">/**
+ *  re-worked the code that was originally in v2 to 
+ *  be more modular, and hopefully easier to read and 
+ *  understand.
+ *  @namespace cumuEff
  * 
- * an api to make it easier to identify what the base layers are that 
- * are part of the application
- * @namespace lyrConfig
- */
-var lyrConfig = (function(google) {
-    'use strict';
-	var lyrConfig, googleMapTypes;
-	lyrConfig = {};
+*/
+
+var cumuEff = ( function (OpenLayers, pieChart, Proj4js) {
+    "use strict";
+    OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
+    var mapLib, drawingLayerName, gce_ip, gce_domain, gce_wfs, gce_wms, gce_ows,
+        albersProj, webMercatorProj, mapInitParams, map;
     
-   /** 
-    * @typedef googleMapConfigsArray
-    * @type {object}
-    * @property {string} label - The name for the type of map
-    * @property {object} params - object that can be fed to the options parameter when creating a google layer.
-    * @property {number} params.numZoomLevels - number of zoom levels to use for this basemap
-    * @property {number} params.MAX_ZOOM_LEVEL - The maximum number of allowable zoom levels
-    * @property {object} params.type - The google map type.  see @link https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes
-    */
+    mapLib = {};
     
-    /**
-     * returns an array of objects that describing the different 
-     * google maps that can be used as base maps
-     * @name lyrConfig#getGoogleMapTypeConfigs
-     * @function
+    /** populates module level variables that are used to 
+     *  wms and wfs servers, projections etc.  
+     * @name cumuEff.defineParams
+     * @function 
+     * @memberof cumuEff
      * @private
-     * @returns {googleMapConfigsArray} an object describing the different google map layers to create.
-     * @memberof lyrConfig 
      */
-    function getGoogleMapTypeConfigs() {
-        var types, streetMaps, hybrid;
-        types = [];
-        streetMaps = {
-            label: 'Google Streets',
-            params: {
-                numZoomLevels: 23
-            }};
-        hybrid = {
-            label: 'Google Hybrid',
-            params: {
-                type : google.maps.MapTypeId.HYBRID,
-                numZoomLevels : 23,
-                MAX_ZOOM_LEVEL : 22
-            }
+    function defineParams() {
+        // temporary drawing layer parameters
+        drawingLayerName = 'tempdrawings';
+        
+        // Google compute engine paramaters
+        gce_ip = '173.255.119.161';
+        gce_domain = 'subban.no-ip.biz';
+        gce_wfs = "http://" + gce_domain + "/geoserver/wfs";
+        gce_wms = "http://" + gce_domain + "/geoserver/wms";
+        gce_ows = "http://" + gce_domain + "/geoserver/ows";
+        
+        // projection related paramters, demo of how to document it in jsdoc
+        /** 
+         * @var {string} albersProj
+         * @description epsg code for bc albers
+         * @memberof cumuEff
+         * @private
+         */
+        albersProj = 'EPSG:3005';
+        
+        webMercatorProj = 'EPSG:900913';
+        // parameters that are required to do the actual translation using proj4js
+        Proj4js.defs["EPSG:3857"] = "+proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs";
+    
+        /** 
+         * @var {object} mapInitParams
+         * @description an openlayers map option object ( http://dev.openlayers.org/docs/files/OpenLayers/Map-js.html#OpenLayers.Map.OpenLayers.Map )
+         * @property {object} projection - an Openlayers projection object @link http://dev.openlayers.org/docs/files/OpenLayers/Projection-js.html
+         * @property {string} units - the map units to use.
+         * @property {number} maxResolution - The maximum resolution
+         * @memberof cumuEff
+         * @private
+        */
+        mapInitParams = {
+            projection : new OpenLayers.Projection(webMercatorProj),
+            units : 'm',
+            maxResolution : 156543.0339,
+            maxExtent : new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34, 20037508.34),
+            controls : []
         };
-        sat = {
-            label: 'Google Satellite', 
-            params: {
-                type : google.maps.MapTypeId.SATELLITE,
-                numZoomLevels : 23,
-                MAX_ZOOM_LEVEL : 22
-            }
-        }
-        return [streetMaps, hybrid, sat];
     }
     
-    
     /**
-     * @name  test2
-     * @function
-     * @memberof lyrConfig
+     * instantiates an openlayers map. 
+     * @name initOpenLayersMap
+     * @function 
+     * @memberof cumuEff
+     * @private
      */
-    lyrConfig.test2 = function (test) {
-        console.log("nothing");
+    function initOpenLayersMap() {
+        map = new OpenLayers.Map('map', mapInitParams);
+        
+    }
+    
+    /** 
+     * @name  mapLib.initMap
+     * @function
+     * @description populates a bunch of configuration variables then creates 
+     *      an openlayers map in the variable map
+     * @memberof cumuEff
+     * @public
+     */
+    mapLib.initMap = function () {
+        defineParams();
+        initOpenLayersMap();
     };
     
     
-    /**
-     * test method does this work in jsdoc
-     * @name lyrConfig#testMethod
-     * @function
-     * @param {Object} test
-     * @param {String} test.param1 - This is a parameter
-     * @param {number} test.param2 - another examples
-     * @memberof lyrConfig
-     */
-    lyrConfig.testMethod = function (test) {
-        console.log("nothing")
-    };
-    
-
-	return lyrConfig;
-}(google));</pre>
+}(OpenLayers, pieChart, Proj4js));
+</pre>
         </article>
     </section>
 
@@ -160,7 +169,7 @@ var lyrConfig = (function(google) {
 					
 		<span class="jsdoc-message">
 		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a>
-		on Wed Jan 22 2014 16:11:00 GMT-0800 (PST) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+		on Wed Jan 22 2014 16:17:27 GMT-0800 (PST) using the <a href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>
 			</div>

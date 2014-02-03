@@ -9,6 +9,11 @@ var lyrConfig = (function(google) {
 	var lyrConfig, googleMapTypes;
 	lyrConfig = {};
     
+    // the name of the div to place the map object into
+    lyrConfig.mapDiv = 'map';
+    lyrConfig
+    
+    
    /** 
     * @typedef googleMapConfigsArray
     * @type {object}
@@ -19,7 +24,6 @@ var lyrConfig = (function(google) {
     * @property {object} params.type - The google map type.  see @link https://developers.google.com/maps/documentation/javascript/maptypes#BasicMapTypes
     */
     
-
     /**
      * returns an array of objects that describing the different 
      * google maps that can be used as base maps
@@ -54,6 +58,11 @@ var lyrConfig = (function(google) {
             }
         }
         return [streetMaps, hybrid, sat];
+    }
+    
+    function getDefaultMapConfig() {
+        // returns an Openlayers.Map options object which is used to 
+        // initialize a map.
     }
     
     
