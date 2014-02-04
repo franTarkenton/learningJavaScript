@@ -1,0 +1,49 @@
+<div class='container'>
+    <h1>Configure Report Parameters</h1>
+    <div class='row'>
+        <div class="col-xs-3">
+            <!-- Start Time: {{$scope.startTime}} -->
+            <h5>Start Time:</h3>
+        </div>
+        <div class="col-xs-4">
+             <h5>Tues Feb 1, 2014</h3>
+        </div>
+        <div class="col-xs-1">
+            <!-- <h5><button id='setReportStartTime' type='button' ng-click="setStartTime()">Set</button></h3>  -->
+                <p class="input-group">
+              <!-- <input type="text" class="form-control" datepicker-popup="dd-MMMM-yyyy" ng-model="dt" is-open="opened" min="minDate" max="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" /> -->              <span class="input-group-btn">
+                <button class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+              </span>
+            </p>        
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-xs-3">
+            <!-- Start Time: {{$scope.startTime}} -->
+            <h5>End Time:</h4>
+        </div>
+        <div class="col-xs-4">
+             <h5>Tues Dec 31, 2014</h4>
+        </div>
+        <div class="col-xs-1">
+             <h5><button id='setReportEndTime' type='button' ng-click="setStartTime()">Set</button></h4> 
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-xs-3">
+            <!-- Start Time: {{$scope.startTime}} -->
+            <h5>Report Resolution:</h4>
+        </div>
+        <div class="col-xs-4">
+             <h5>Day</h4>
+        </div>
+        <div class="col-xs-1">
+             <h5><button id='setReportEndTime' type='button' ng-click="setStartTime()">Set</button></h4>
+        </div>
+    </div>
+    <div class='row'>
+        <div class='col-xs-8' align='center'>
+             <h5><button id='setReportEndTime' type='button' ng-click="setStartTime()">Get Report</button></h4>
+        </div> 
+    </div>
+</div>
