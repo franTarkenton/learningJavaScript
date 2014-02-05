@@ -9,7 +9,7 @@ var routeFunction = function($routeProvider)  {
       }).
       when('/config', {
         templateUrl: 'app/partials/backendConfig.html',
-        controller: 'testController'
+        controller: 'backEndConfigCtrl'
       }).
       otherwise({
         redirectTo: '/'

@@ -1,49 +1,78 @@
-<div class='container'>
+<div class='container-fluid'>
     <h1>Configure Report Parameters</h1>
     <div class='row'>
-        <div class="col-xs-3">
+        <div class="col-xs-4">
             <!-- Start Time: {{$scope.startTime}} -->
-            <h5>Start Time:</h3>
+            <h4>Start Time:</h4>
         </div>
         <div class="col-xs-4">
-             <h5>Tues Feb 1, 2014</h3>
+            <h5> 
+            <input type="text" class="form-control" datepicker-popup="{{startDate.format}}" ng-model="startDate.dt" is-open="startDate.opened" min="startDate.minDate"  datepicker-options="startDate.dateOptions" date-disabled="startDate.disabled(date, mode)" ng-required="true" close-text="Close"\>
+            </h5>
         </div>
-        <div class="col-xs-1">
+        <div class="col-xs-2">
             <!-- <h5><button id='setReportStartTime' type='button' ng-click="setStartTime()">Set</button></h3>  -->
-                <p class="input-group">
-              <!-- <input type="text" class="form-control" datepicker-popup="dd-MMMM-yyyy" ng-model="dt" is-open="opened" min="minDate" max="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" /> -->              <span class="input-group-btn">
-                <button class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
-              </span>
-            </p>        
+            <h5>
+                <span class="input-group-btn">
+                <button class="btn btn-default" ng-click="startDate.open($event)">
+                    <i class="glyphicon glyphicon-calendar"></i>
+                </button>
+                 </span>
+                 </h5>
+        </div>
+    </div>
+    <div class='row'>
+        <div class="col-xs-4">
+            <!-- Start Time: {{$scope.startTime}} -->
+            <h4>End Time:</h4>
+        </div>
+        <div class="col-xs-4">
+            <h5>
+                <!-- Tues Dec 31, 2014 -->
+                <input type="text" class="form-control" datepicker-popup="{{endDate.format}}" ng-model="endDate.dt" is-open="endDate.opened" min="endDate.minDate"  datepicker-options="endDate.dateOptions" date-disabled="endDate.disabled(date, mode)" ng-required="true" close-text="Close"\>
+            </h5>
+        </div>
+        <div class="col-xs-2">
+            <h5>
+            <span class="input-group-btn">
+                <button class="btn btn-default" ng-click="endDate.open($event)">
+                    <i class="glyphicon glyphicon-calendar"></i>
+                </button>
+                 </span>
+             </h5>
         </div>
     </div>
     <div class='row'>
         <div class="col-xs-3">
             <!-- Start Time: {{$scope.startTime}} -->
-            <h5>End Time:</h4>
+            <h4>Report Resolution:</h4>
         </div>
-        <div class="col-xs-4">
-             <h5>Tues Dec 31, 2014</h4>
-        </div>
-        <div class="col-xs-1">
-             <h5><button id='setReportEndTime' type='button' ng-click="setStartTime()">Set</button></h4> 
-        </div>
-    </div>
-    <div class='row'>
-        <div class="col-xs-3">
-            <!-- Start Time: {{$scope.startTime}} -->
-            <h5>Report Resolution:</h4>
-        </div>
-        <div class="col-xs-4">
-             <h5>Day</h4>
-        </div>
-        <div class="col-xs-1">
-             <h5><button id='setReportEndTime' type='button' ng-click="setStartTime()">Set</button></h4>
+        <div class="btn-group">
+            <div ng-repeat="repRes in reportResolution.values" class="col-xs-2 resolutionButtons">
+                <button  type="button" class="btn btn-primary resolutionButtons" ng-model="reportResolution.selected" btn-radio="'{{repRes}}'" >{{repRes}}</button>
+                <!-- {{repRes}} and {{model}} -->
+            </div>
         </div>
     </div>
     <div class='row'>
-        <div class='col-xs-8' align='center'>
-             <h5><button id='setReportEndTime' type='button' ng-click="setStartTime()">Get Report</button></h4>
-        </div> 
+        <div class='col-xs-6' align='right'>
+            <h5>
+            <button id='setReportEndTime' class='btn btn-default'  type='button' ng-click="go('#/backendConfig.html')">
+                Configure
+            </button></h5>
+        </div>
+                <div class='col-xs-6' align='left'>
+            <h5>
+            <button id='setReportEndTime' class='btn btn-default' type='button' ng-click="setStartTime()">
+                Get Report
+            </button></h5>
+        </div>
+
     </div>
+    <!-- <div class='row'>
+    <div class='col-xs-8' align='center'>
+    a is {{a}}
+    </div>
+    </div>  -->
+
 </div>
