@@ -1,3 +1,76 @@
-<div>
-    This is the backend configuration view
+
+<div class='container'>
+    <form role='form' class="form">
+        <div class="form-group">
+            <div >
+                <h3 align='center'>ESRI Licence Reporting Configuration</h3>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <div >
+                <label> Products to Report on:</label>
+             </div>
+             <div >
+                <!-- <label for='product2ReportOn'>Products Reporting on:</label> -->
+                <select  class='form-control' size=4 ng-model='productInfo.productSelected'>
+                    <option  ng-repeat='product in productInfo.products' value='{{product}}'>{{product}}</option>
+                </select>
+                
+                
+                <button id='DeleteProduct' class='btn btn-default  form-control' type='button' ng-click="productInfo.deleteSelectedProduct()">
+                    Delete
+                </button>
+                <label class='sr-only'>New Value to Enter</label>
+                <div class='input-group'>
+                    <input type='text' class='form-control' id='product2ReportOn' ng-enter="productInfo.addProduct()" ng-model='productInfo.value2Add'>
+                    <span class="input-group-btn">
+                        <button id='enterNewProduct'  class='btn btn-default  form-control' type='button' ng-click="productInfo.addProduct()">
+                            Add
+                        </button> 
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div >
+                <label> Users to Omit from Report:</label>
+            </div>
+            <div >
+                <!-- <label for='product2ReportOn'>Products Reporting on:</label> -->
+                <select  class='form-control' size=5>
+                    <option value='volvo'>Volvo</option>
+                    <option value='saab'>saab</option>
+                    <option value='challenger'>challenger</option>
+                    <option value='beemer'>beemer</option>
+                    <option value='shitbox'>shitbox</option>
+                </select>
+                <button id='enterNewProduct'  class='btn btn-default  form-control' type='button' ng-click="enterNewProduct()">
+                    Delete
+                </button>
+                <label class='sr-only'>New Value to Enter</label>
+                <div class='input-group'>
+                    <input type='text' class='form-control' id='product2ReportOn'>
+                    <span class="input-group-btn">
+                        <button id='enterNewProduct'  class='btn btn-default  form-control' type='button' ng-click="enterNewProduct()">
+                            Add
+                        </button> 
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div>
+                <label> Oracle Temp Table Prefix </label>
+            </div>
+            <div>
+                <input type='text' class='form-control' id='product2ReportOn' value='esritmp_'>
+            </div>
+        </div>
+        <div class="form-group">
+            
+            
+        </div>
+    </form>
 </div>
+{{tmpTablePrefix}}

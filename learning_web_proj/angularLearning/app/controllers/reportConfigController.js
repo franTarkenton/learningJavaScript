@@ -93,4 +93,4 @@ var cntrlFunction = function ($scope, $routeParams, $location) {
     
 };
 
-ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', cntrlFunction]);
+ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', '$location', cntrlFunction]);

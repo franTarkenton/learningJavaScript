@@ -48,6 +48,7 @@
             <h4>Report Resolution:</h4>
         </div>
         <div class="btn-group">
+            <!-- could use a button group here! -->
             <div ng-repeat="repRes in reportResolution.values" class="col-xs-2 resolutionButtons">
                 <button  type="button" class="btn btn-primary resolutionButtons" ng-model="reportResolution.selected" btn-radio="'{{repRes}}'" >{{repRes}}</button>
                 <!-- {{repRes}} and {{model}} -->
@@ -57,8 +58,8 @@
     <div class='row'>
         <div class='col-xs-6' align='right'>
             <h5>
-            <button id='setReportEndTime' class='btn btn-default'  type='button' ng-click="go('#/backendConfig.html')">
-                Configure
+            <button id='config' class='btn btn-default'  ng-click="go('/config')">
+                Configure 
             </button></h5>
         </div>
                 <div class='col-xs-6' align='left'>

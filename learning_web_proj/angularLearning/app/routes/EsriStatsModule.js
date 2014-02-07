@@ -3,7 +3,7 @@ var ESRIStatsApp = angular.module('ESRIStatsApp', ['ngRoute', 'ui.bootstrap']);
 
 var routeFunction = function($routeProvider)  {
     $routeProvider.
-      when('/', {
+      when('/report', {
         templateUrl: 'app/partials/reportConfig.html',
         controller: 'reportConfigController'
       }).
@@ -12,7 +12,7 @@ var routeFunction = function($routeProvider)  {
         controller: 'backEndConfigCtrl'
       }).
       otherwise({
-        redirectTo: '/'
+        redirectTo: '/report'
       })};
       
       
