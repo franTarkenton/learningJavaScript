@@ -16,8 +16,15 @@ var routeFunction = function($routeProvider)  {
       })};
       
       
+// appconfigParamList = ['$httpProvider', function($httpProvider) {
+        // $httpProvider.defaults.useXDomain = true;
+        // delete $httpProvider.defaults.headers.common['X-Requested-With'];
+    // }
+// ];
+//       
+      
 ESRIStatsApp.config(['$routeProvider',routeFunction]);
-
+// ESRIStatsApp.config(appconfigParamList);
     
                         
 

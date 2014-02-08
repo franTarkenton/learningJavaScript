@@ -1,27 +1,57 @@
-var cntrlFunction = function ($scope) {
-    var i;
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
+/*global define */
+
+var cntrlFunction = function ($scope, $location, $http) {
+    "use strict";
+    var i, productInfo, users, getListObject;
     
-    var getListObject = function() {
+    getListObject = function() {
         var listObj = {};
         listObj.data = [];
         listObj.selected = null;
         listObj.value2Add = null;
         
-        listObj.add = function(data) {
+        listObj.setData = function(data) {
             listObj.data = data;
+            listObj.selected = data[0];
         };
         
         listObj.deleteSelected = function() {
+            testfunc();
             console.log('sel: ' + listObj.selected); 
             for ( i=0; i<listObj.data.length; i+=1) {
-                if (listObj.productSelected === listObj.data[i]) {
+                console.log(i + ' ' + listObj.data[i]);
+                if (listObj.selected === listObj.data[i]) {
+                    console.log("here");
                     listObj.data.splice(i, 1);
                     listObj.selected = listObj.data[0];
                 }
             }
         };
         
-        productInfo.add = function() {
+        function testfunc() {
+            // var requestObj = {
+                // method: 'GET',
+                // url:'http://subban.no-ip.biz/esriStats/bozak/',
+                // headers: {'Access-Control-Allow-Origin': '*',
+                          // 'Access-Control-Allow-Headers': 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token',
+                          // 'Access-Control-Allow-Methods': 'GET' 
+                          // }
+            // };
+            var requestObj = {
+                method: 'GET',
+                url:'http://subban.no-ip.biz/esriStats/bozak',
+            };
+            
+            
+            console.log("makding the request");
+            $http(requestObj ).success(function(data, status, headers, config) {
+                console.log('data is: ' + data + ' type: ' + typeof data );
+            });
+            
+        };
+        
+        listObj.add = function() {
             console.log("value to enter is: " + listObj.value2Add);
             if (listObj.value2Add !== null) {
                 listObj.value2Add = listObj.value2Add.trim();
@@ -32,52 +62,36 @@ var cntrlFunction = function ($scope) {
             }
             listObj.value2Add = null;
         };
-        return productInfo;
+        return listObj;
     };
     
-    var productInfo = {};
-    
-    productInfo.products = ['ARC/INFO', 'EDITOR', 'VIEWER'];
-    productInfo.productSelected = productInfo.products[0];
-    productInfo.deleteSelectedProduct = function() {
-        console.log('sel prod' + productInfo.productSelected); 
-        for ( i=0; i<productInfo.products.length; i+=1) {
-            if (productInfo.productSelected === productInfo.products[i]) {
-                productInfo.products.splice(i, 1);
-                productInfo.productSelected = productInfo.products[0];
-            }
-        }
-    };
-    productInfo.value2Add = null;
-    productInfo.addProduct = function() {
-        console.log("valeu to enter is: " + productInfo.value2Add);
-        if (productInfo.value2Add !== null) {
-            productInfo.value2Add = productInfo.value2Add.trim();
-            if (productInfo.value2Add !== null && productInfo.value2Add !== '') {
-                console.log("valeu to enter is: " + productInfo.value2Add);
-                productInfo.products.push(productInfo.value2Add);
-            }
-        }
-        productInfo.value2Add = null;
-    };
-    
-    
-    
+    productInfo = getListObject();
+    productInfo.setData(['ARC/INFO', 'EDITOR', 'VIEWER']);
     $scope.productInfo = productInfo;
     
-    var users = {};
-    
-    users.usersOmit = ['HPRARC', 'REPLICAT','WINS', 'SYSTEM',
-                        'SRMOIAS', 'ESRI'];
-    users.userSelected = users.usersOmit[0];
+    users = getListObject();
+    users.setData(['HPRARC', 'REPLICAT','WINS', 'SYSTEM',
+                        'SRMOIAS', 'ESRI']);
+    $scope.users = users;               
+                        
     
     $scope.tmpTablePrefix = 'esritmp_';
     
-    $scope.deleteSelectedProduct = function() {
+    $scope.backPath = '/report';
+    
+    $scope.proceed = function() {
+        console.log("proceeding!!");
+        // data in this form should be sent back to the factory and 
+        // saved
+        $location.path( $scope.backPath );
     };
     
-    $scope.add;
+    $scope.cancel = function( ) {
+        // data in this form should be ignored, revert back to data in the factory
+        console.log("path is: " + $scope.backPath);
+        $location.path( $scope.backPath );
+    };
                          
 };
 
-ESRIStatsApp.controller('backEndConfigCtrl', [ '$scope', cntrlFunction]);
+ESRIStatsApp.controller('backEndConfigCtrl', [ '$scope', '$location', '$http', cntrlFunction]);
