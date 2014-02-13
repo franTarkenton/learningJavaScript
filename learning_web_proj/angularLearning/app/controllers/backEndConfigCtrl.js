@@ -81,7 +81,6 @@ var cntrlFunction = function ($scope, $location, $http, usageStats, config) {
                         'SRMOIAS', 'ESRI']);
     $scope.users = users;
                         
-    
     $scope.tmpTablePrefix = 'esritmp_';
     $scope.backPath = '/report';
     
