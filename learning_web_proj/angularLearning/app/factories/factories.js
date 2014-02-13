@@ -1,11 +1,10 @@
-var appObj = angular.module("ESRIStatsApp", []);
 
-var factoryFunction = function() {
+var esriStatsObj = function() {
     var factory = {};
     //new Date(year, month, day, hours, minutes, seconds, milliseconds);
     // eventually want to replace this with a query to a service, but this 
     // will do for now as a very small sample of data.
-    var usageStats = [{sample_time: new Date(2013, 1, 1), 
+    var dummyData = [{sample_time: new Date(2013, 1, 1), 
                        arcinfo: 133, 
                        editor: 21, 
                        viewer: 129}, 
@@ -24,10 +23,40 @@ var factoryFunction = function() {
                        {sample_time: new Date(2013, 5, 1),
                         arcinfo: 124, 
                         editor: 3, 
-                        viewer: 156}]};
+                        viewer: 156}];
                         
-    factory.getData = function() {
-        return usageStats;
+    factory.getDummyData = function() {
+        return dummyData;
     };
     
-appObj.factory('getData', factoryFunction).controller('esriStatsControllers')
+    factory.getData = function () { 
+    
+        var requestObj = {
+            method: 'GET',
+            url:'http://subban.no-ip.biz/esriStats/bozak',
+        };    
+                
+        console.log("makding the request");
+        $http(requestObj ).success(function(data, status, headers, config) {
+            var i, keys;
+            console.log('data is: ' + data + ' type: ' + typeof data );
+            if (typeof data === 'object') {
+                console.log("object data");
+                keys = Object.keys(data);
+                for (i=0; i<keys.length; i+=1){
+                    console.log("key:" + keys[i] + ' value: ' + data[keys[i]]);
+                }
+            }
+        }).error(function(data, status, headers, config) {
+            console.log("error encountered!");
+        });
+    };
+    
+    
+    
+    
+    
+    return factory;
+};
+    
+ESRIStatsApp.factory('esriStatsFactory', esriStatsObj);

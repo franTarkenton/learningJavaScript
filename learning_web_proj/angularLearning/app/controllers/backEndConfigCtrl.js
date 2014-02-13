@@ -1,7 +1,7 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */
 /*global define */
 
-var cntrlFunction = function ($scope, $location, $http) {
+var cntrlFunction = function ($scope, $location, $http, usageStats, config) {
     "use strict";
     var i, productInfo, users, getListObject;
     
@@ -16,6 +16,18 @@ var cntrlFunction = function ($scope, $location, $http) {
             listObj.selected = data[0];
         };
         
+        listObj.setDataFromService = function(serviceData) {
+            var i, data, curData;
+            curData = [];
+            serviceData.$promise.then(function(data) {
+                for (i=0; i<data.length; i+=1) {
+                    curData.push(data[i].data);
+                }
+            });
+            listObj.data = curData;
+            listObj.selected = curData[0];
+        };
+                
         listObj.deleteSelected = function() {
             testfunc();
             console.log('sel: ' + listObj.selected); 
@@ -30,25 +42,18 @@ var cntrlFunction = function ($scope, $location, $http) {
         };
         
         function testfunc() {
-            // var requestObj = {
-                // method: 'GET',
-                // url:'http://subban.no-ip.biz/esriStats/bozak/',
-                // headers: {'Access-Control-Allow-Origin': '*',
-                          // 'Access-Control-Allow-Headers': 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token',
-                          // 'Access-Control-Allow-Methods': 'GET' 
-                          // }
-            // };
-            var requestObj = {
-                method: 'GET',
-                url:'http://subban.no-ip.biz/esriStats/bozak',
-            };
+            var i;
+            // test the factory: 
+            var data = config.query();
+            // var data = usageStats.get();
             
-            
-            console.log("makding the request");
-            $http(requestObj ).success(function(data, status, headers, config) {
-                console.log('data is: ' + data + ' type: ' + typeof data );
+            // retrieving the deferred data
+            data.$promise.then(function(data) {
+
+                for (i=0; i<data.length; i++) {
+                    console.log('data is' + data[i].data);
+                }
             });
-            
         };
         
         listObj.add = function() {
@@ -66,17 +71,18 @@ var cntrlFunction = function ($scope, $location, $http) {
     };
     
     productInfo = getListObject();
-    productInfo.setData(['ARC/INFO', 'EDITOR', 'VIEWER']);
+    var productsArray = config.query();
+    //productInfo.setData(['ARC/INFO', 'EDITOR', 'VIEWER']);
+    productInfo.setDataFromService(productsArray);
     $scope.productInfo = productInfo;
     
     users = getListObject();
     users.setData(['HPRARC', 'REPLICAT','WINS', 'SYSTEM',
                         'SRMOIAS', 'ESRI']);
-    $scope.users = users;               
+    $scope.users = users;
                         
     
     $scope.tmpTablePrefix = 'esritmp_';
-    
     $scope.backPath = '/report';
     
     $scope.proceed = function() {
@@ -94,4 +100,4 @@ var cntrlFunction = function ($scope, $location, $http) {
                          
 };
 
-ESRIStatsApp.controller('backEndConfigCtrl', [ '$scope', '$location', '$http', cntrlFunction]);
+ESRIStatsApp.controller('backEndConfigCtrl', [ '$scope', '$location', '$http', 'usageStats', 'config', cntrlFunction]);
