@@ -1,5 +1,5 @@
 
-var cntrlFunction = function ($scope, $routeParams, $location) {
+var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory) {
     $scope.a = 5;
     $scope.b = 6; //reportConfigController
     
@@ -51,6 +51,31 @@ var cntrlFunction = function ($scope, $routeParams, $location) {
             console.log("year: " + year);
         };
         
+        
+        dateObj.getStringDate = function() {
+            // YYYY-MM-DD HH24:MI:SS
+            stringDate = dateObj.dt.getFullYear() + '-' + 
+                         dateObj.dt.getMonth() + '-' + 
+                         dateObj.dt.getDate() + ' ' + 
+                         dateObj.dt.getHours() + ':' + 
+                         dateObj.dt.getMinutes() + ':' + 
+                         dateObj.dt.getSeconds();
+            return stringDate;
+        };
+        
+        dateObj.getUTCDate = function() {
+            var utc;
+            utc = Date.UTC(dateObj.dt.getFullYear(), 
+                            dateObj.dt.getMonth(),
+                            dateObj.dt.getDate(),
+                            dateObj.dt.getHours(),
+                            dateObj.dt.getMinutes(), 
+                            dateObj.dt.getSeconds());
+            return utc
+        };
+        
+        
+        
         dateObj.formats = ['dd-MMMM-yyyy', 'yyyy/MM/dd', 'shortDate'];
         dateObj.format = dateObj.formats[0];
         console.log("format date: " + dateObj.format);
@@ -80,6 +105,42 @@ var cntrlFunction = function ($scope, $routeParams, $location) {
         $location.path( path );
     };
     
+    $scope.runReport = function () {
+        var startDate, endDate, reportResolution, utcStart, utcEnd;
+        console.log("running the report");
+        startDate = $scope.startDate.getStringDate();
+        endDate = $scope.endDate.getStringDate();
+        reportResolution = $scope.reportResolution.selected
+        console.log("start date is: " + startDate);
+        console.log("end date is:" + endDate);
+        
+        utcStart = $scope.startDate.getUTCDate()
+        utcEnd =  $scope.endDate.getUTCDate()
+        console.log('utcStart' + utcStart);
+        console.log('utcEnd' + utcEnd);
+        
+        $scope.reportData = runReportFactory.query(
+                                {'startDate': utcStart, 
+                                'endDate': utcEnd, 
+                                'reportResolution': reportResolution}, function() {
+            var i, j, row;
+            for ( i=0; i<$scope.reportData.length; i++) {
+                vals = '';
+                for ( j=0; j<$scope.reportData[i].length; j++) {
+                    vals + $scope.reportData[i][j]
+                }
+                console.log("vals: " + vals);
+            }
+            console.log('report data: ' + $scope.reportData);
+        });
+        
+        // $scope.reportData = runReportFactory.query({'startDate': utcStart, 
+                                // 'endDate': utcEnd, 
+                                // 'reportResolution': reportResolution});
+//         
+        
+    };
+    
     // $scope.open = function() {
         // var modelInstance = $modal.open({
             // templateUrl: 'app/partials/backendConfig.html', 
@@ -93,4 +154,4 @@ var cntrlFunction = function ($scope, $routeParams, $location) {
     
 };
 
-ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', '$location', cntrlFunction]);
+ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', '$location', 'runReportFactory', cntrlFunction]);

@@ -24,6 +24,16 @@ var routeFunction = function($routeProvider)  {
 //       
       
 ESRIStatsApp.config(['$routeProvider',routeFunction]);
+
+ESRIStatsApp.config(['$sceDelegateProvider', 
+    function($sceDelegateProvider) {
+        $sceDelegateProvider.resourceUrlWhitelist(
+            ['self', 
+            'http://subban.no-ip.biz/esriStats/**', 
+            'http://subban.no-ip.biz/esriStats/config/**',
+            'http://cumeffects.dev/**']);
+}])
+
 // ESRIStatsApp.config(appconfigParamList);
     
                         

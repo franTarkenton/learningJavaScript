@@ -14,12 +14,15 @@
              <div >
                 <!-- <label for='product2ReportOn'>Products Reporting on:</label> -->
                 <select  class='form-control' size=4 ng-model='productInfo.selected'>
-                    <option  ng-repeat='product in productInfo.data' value='{{product}}'>{{product}}</option>
+                    <option  ng-repeat='product in productInfo.data' value='{{product.data}}'>{{product.data}}</option>
                 </select>
                 
                 
-                <button id='DeleteProduct' class='btn btn-default  form-control' type='button' ng-click="productInfo.deleteSelected()">
+                <button id='DeleteProduct' class='btn btn-default  form-control' type='button' ng-click="productInfo.del()">
                     Delete
+                </button>
+                <button id='ResetProduct' class='btn btn-default  form-control' type='button' ng-click="productInfo.reset()">
+                    Reset
                 </button>
                 <label class='sr-only'>New Value to Enter</label>
                 <div class='input-group'>
@@ -30,6 +33,7 @@
                         </button> 
                     </span>
                 </div>
+                
             </div>
         </div>
         
@@ -39,13 +43,17 @@
              </div>
              <div >
                 <select  class='form-control' size=4 ng-model='users.selected'>
-                    <option  ng-repeat='user in users.data' value='{{user}}'>{{user}}</option>
+                    <option  ng-repeat='user in users.data' value='{{user.data}}'>{{user.data}}</option>
                 </select>
                 
                 
-                <button id='DeleteProduct' class='btn btn-default  form-control' type='button' ng-click="users.deleteSelected()">
+                <button id='DeleteProduct' class='btn btn-default  form-control' type='button' ng-click="users.del()">
                     Delete
                 </button>
+                <button id='ResetOmitUsers' class='btn btn-default  form-control' type='button' ng-click="users.reset()">
+                    Reset
+                </button>
+
                 <label class='sr-only'>New Value to Enter</label>
                 <div class='input-group'>
                     <input type='text' class='form-control' id='product2ReportOn' ng-enter="users.add()" ng-model='users.value2Add'>

@@ -10,13 +10,65 @@ esriStatsServices.factory('usageStats', ['$resource',
      }]
 );
 
-esriStatsServices.factory('config', ['$resource', 
+// esriStatsServices.factory('config', ['$resource', 
+    // function($resource) {
+        // var baseUrl =  'http://subban.no-ip.biz/esriStats/';
+        // return $resource(baseUrl + 'config/:configType', {verb: 'config', confType: 'products'}, {
+            // query: {method: 'GET', params: {}, isArray: true}, 
+            // post: {method: 'POST', params: {} } , 
+            // remove: {method: 'DELETE', params: {} }
+        // }) 
+    // }]);
+
+// esriStatsServices.factory('config2', ['$resource', 
+    // function($resource) {
+        // var baseUrl =  'http://subban.no-ip.biz/esriStats/';
+        // return $resource(
+            // baseUrl + 'config/:configType',
+            // { confType: 'products'}
+        // );
+// }]);
+
+esriStatsServices.factory('userConfig', ['$resource', 
     function($resource) {
         var baseUrl =  'http://subban.no-ip.biz/esriStats/';
-        return $resource(baseUrl + 'config/:configType', {verb: 'config', confType: 'products'}, {
-            query: {method: 'GET', params: {}, isArray: true}
-        }) 
-    }]);
+        return $resource(
+            baseUrl + 'users/:userValue',
+                {configType: 'userValue'},
+                {
+                    reset: {method: 'POST', params:{reset:true}}
+                }
+        );
+}]);
+
+esriStatsServices.factory('productConfig', ['$resource', 
+    function($resource) {
+        var baseUrl =  'http://subban.no-ip.biz/esriStats/';
+        return $resource(
+            baseUrl + 'products/:productValue', 
+                {configType: 'productValue'}, 
+                {
+                    reset: {method: 'POST', params:{reset:true}}
+                }
+        );
+}]);
+
+esriStatsServices.factory('runReportFactory', ['$resource', 
+    function($resource) {
+        var baseUrl =  'http://subban.no-ip.biz/esriStats/';
+        
+        return $resource(
+            baseUrl + 'report/:st/:ed/:res', 
+                {st:'@startDate', 
+                 ed: '@endDate',
+                 res: '@reportResolution'}
+        );
+}]);
+
+
+
+
+
 
 
 // ESRIStatsApp.factory('esriStatsFactory', ['$http', function($http) {
