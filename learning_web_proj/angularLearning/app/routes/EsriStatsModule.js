@@ -1,4 +1,4 @@
-var ESRIStatsApp = angular.module('ESRIStatsApp', ['ngRoute', 'ui.bootstrap', 'esriStatsServices']);
+var ESRIStatsApp = angular.module('ESRIStatsApp', ['ngRoute', 'ui.bootstrap', 'esriStatsServices', 'googlechart']);
 
 
 var routeFunction = function($routeProvider)  {

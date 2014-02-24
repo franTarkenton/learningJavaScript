@@ -118,18 +118,30 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
         utcEnd =  $scope.endDate.getUTCDate()
         console.log('utcStart' + utcStart);
         console.log('utcEnd' + utcEnd);
-        
+        $scope.showprogress = true;
+        $scope.progressMessage = 'Getting data... (can take a few minutes)'
+        $scope.progressbarState = 100;
+        // TODO: modify this query to run a separate query per product
         $scope.reportData = runReportFactory.query(
                                 {'startDate': utcStart, 
                                 'endDate': utcEnd, 
                                 'reportResolution': reportResolution}, function() {
             var i, j, row;
-            for ( i=0; i<$scope.reportData.length; i++) {
+            // $scope.reportData array of objects!  
+            //   [  {0: <date>, 1:<number>}]
+            
+            
+            
+            for ( i=0; i<$scope.reportData.length; i+=1) {
                 vals = '';
-                for ( j=0; j<$scope.reportData[i].length; j++) {
-                    vals + $scope.reportData[i][j]
+                keys = Object.keys($scope.reportData[i])
+                for ( j=0; j<keys.length; j++) {
+                    vals = vals + ' - ' + $scope.reportData[i][j]
                 }
+                
                 console.log("vals: " + vals);
+                
+                console.log("keys " + keys )
             }
             console.log('report data: ' + $scope.reportData);
         });
@@ -141,6 +153,15 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
         
     };
     
+    function showChart() {
+        $scope.chart = {
+            type: 'LineChart',
+            displayed: true, 
+            data: '',
+            rows: 
+        }
+    }
+    
     // $scope.open = function() {
         // var modelInstance = $modal.open({
             // templateUrl: 'app/partials/backendConfig.html', 
@@ -151,7 +172,17 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
         // })
         
    //};//
-    
+   
+   // progress bar stuff
+   $scope.progressBarType = 'info';
+   $scope.showWarning = true;
+   $scope.showprogress = false;
+   $scope.progressbarState = 0;
+   $scope.progressMessage = '';
+   
+   
+   
+   
 };
 
 ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', '$location', 'runReportFactory', cntrlFunction]);
