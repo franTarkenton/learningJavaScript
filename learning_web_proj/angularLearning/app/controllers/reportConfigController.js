@@ -1,5 +1,5 @@
 
-var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory) {
+var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory, productConfig) {
     $scope.a = 5;
     $scope.b = 6; //reportConfigController
     
@@ -122,18 +122,20 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
         $scope.progressMessage = 'Getting data... (can take a few minutes)'
         $scope.progressbarState = 100;
         // TODO: modify this query to run a separate query per product
-        $scope.reportData = runReportFactory.query(
-                                {'startDate': utcStart, 
-                                'endDate': utcEnd, 
-                                'reportResolution': reportResolution}, function() {
-            var i, j, row, chartData;
-            chartData = restructData($scope.reportData);
-            $scope.chartObject = chartData;
-            console.log('chartObject');
-            console.log(JSON.stringify(chartData));
-            $scope.showprogress = false;
-        });
-                
+        //$scope.products = productConfig.query({}, function() {
+            //console.log("products:" + $scope.products );
+	        $scope.reportData = runReportFactory.query(
+	                                {'startDate': utcStart, 
+	                                'endDate': utcEnd, 
+	                                'reportResolution': reportResolution}, function() {
+	            var i, j, row, chartData;
+	            chartData = restructData($scope.reportData);
+	            $scope.chartObject = chartData;
+	            console.log('chartObject');
+	            console.log(JSON.stringify(chartData));
+	            $scope.showprogress = false;
+	        });
+        //) 
     };
     
     function restructData(inData) {
@@ -211,7 +213,7 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
     	};
     	retData.formatters = {};
     	return retData;
-    }
+    };
     
     function showChart() {
         $scope.chart = '';
@@ -240,4 +242,4 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
    
 };
 
-ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', '$location', 'runReportFactory', cntrlFunction]);
+ESRIStatsApp.controller('reportConfigController', ['$scope', '$routeParams', '$location', 'runReportFactory', 'productConfig', cntrlFunction]);
