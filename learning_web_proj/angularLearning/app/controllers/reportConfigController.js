@@ -110,12 +110,12 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
         console.log("running the report");
         startDate = $scope.startDate.getStringDate();
         endDate = $scope.endDate.getStringDate();
-        reportResolution = $scope.reportResolution.selected
+        reportResolution = $scope.reportResolution.selected;
         console.log("start date is: " + startDate);
         console.log("end date is:" + endDate);
         
-        utcStart = $scope.startDate.getUTCDate()
-        utcEnd =  $scope.endDate.getUTCDate()
+        utcStart = $scope.startDate.getUTCDate();
+        utcEnd =  $scope.endDate.getUTCDate();
         console.log('utcStart' + utcStart);
         console.log('utcEnd' + utcEnd);
         $scope.showprogress = true;
@@ -126,40 +126,95 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory)
                                 {'startDate': utcStart, 
                                 'endDate': utcEnd, 
                                 'reportResolution': reportResolution}, function() {
-            var i, j, row;
-            // $scope.reportData array of objects!  
-            //   [  {0: <date>, 1:<number>}]
-            
-            
-            
-            for ( i=0; i<$scope.reportData.length; i+=1) {
-                vals = '';
-                keys = Object.keys($scope.reportData[i])
-                for ( j=0; j<keys.length; j++) {
-                    vals = vals + ' - ' + $scope.reportData[i][j]
-                }
-                
-                console.log("vals: " + vals);
-                
-                console.log("keys " + keys )
-            }
-            console.log('report data: ' + $scope.reportData);
+            var i, j, row, chartData;
+            chartData = restructData($scope.reportData);
+            $scope.chartObject = chartData;
+            console.log('chartObject');
+            console.log(JSON.stringify(chartData));
+            $scope.showprogress = false;
         });
-        
-        // $scope.reportData = runReportFactory.query({'startDate': utcStart, 
-                                // 'endDate': utcEnd, 
-                                // 'reportResolution': reportResolution});
-//         
-        
+                
     };
     
+    function restructData(inData) {
+    	var cnt, retData, i, keys, j, dataTabCols, dataTabVals;
+    	dataTabCols = [];
+    	dataTabVals = [];
+    	console.log("indata is:" + inData);
+    	// deal with the columns
+    	for (i=0; i<inData.length; i+=1) {
+    		keys = Object.keys(inData[i]);
+    		
+    		//console.log("keys: " + keys )
+    		//for (j=keys.length-1; j>=0; j-=1) {
+    	    for (j=0; j<keys.length; j+=1) {
+    			colRow = {};
+    			console.log(keys[j] + " : " + inData[i][keys[j]]);
+    			colRow.id = [keys[j]];
+    			colRow.label = [keys[j]];
+    			if (keys[j] === 'sample_time') {
+    				colRow.type = 'string';
+    			} else if (keys[j] === 'lic_used'){
+    				colRow.type = 'number';
+    			}
+    			else {
+    				console.log('888888888888888888888888888888888888888');
+    			}
+    			console.log("---------------------")
+    			console.log("id: " + colRow.id);
+    			console.log("label: " + colRow.label);
+    			console.log("type is " + colRow.type);
+    			
+    			dataTabCols.push(colRow);
+    		}
+    		break;
+     	}
+     	
+    	// now deal with row data
+    	for (i=0; i<inData.length; i+=1) {
+    		keys = Object.keys(inData[i]);
+    		rowData = {};
+    		rowData.c = [];
+    		console.log("new row of data");
+    		//console.log("keys: " + keys )
+    		//for (j=keys.length-1; j>=0; j-=1) {
+    		for (j=0; j<keys.length; j+=1) {
+    			value = {};
+    			value.v = inData[i][keys[j]];
+    			console.log("  "  + keys[j] + ' : ' + value.v + ' (' + typeof value.v + ') ');
+    			rowData.c.push(value);
+    		}
+    		dataTabVals.push(rowData);
+    	}
+    	
+    	
+    	// stuff to figure out how to dynamically configure later on
+    	retData = {};
+    	retData.type = "LineChart";
+    	retData.displayed = true;
+    	retData.title = 'graph chart title';
+    	retData.data = {cols:dataTabCols, rows:dataTabVals};
+    	retData.options = {
+    		title: 'my first chart',
+    		isStacked: true,
+    		fill: 20,
+    		displayExactValues: true,
+    		vAxis: {
+    			title: 'vaxis Title',
+    			gridlines: {
+    				count: 10
+    			}
+    		},
+    		hAxis: {
+    			title: 'horizontal Title'
+    		}
+    	};
+    	retData.formatters = {};
+    	return retData;
+    }
+    
     function showChart() {
-        $scope.chart = {
-            type: 'LineChart',
-            displayed: true, 
-            data: '',
-            rows: 
-        }
+        $scope.chart = '';
     }
     
     // $scope.open = function() {
