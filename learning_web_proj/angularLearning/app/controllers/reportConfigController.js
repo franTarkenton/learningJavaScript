@@ -2,6 +2,7 @@
 var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory, productConfig) {
     $scope.a = 5;
     $scope.b = 6; //reportConfigController
+    firstChart = true;
     
     var getDateObj = function() {
         var dateObj = {};
@@ -105,6 +106,107 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory,
         $location.path( path );
     };
     
+    function requestReportData(product) {
+    	console.log("product in the requestReportData is " + product);
+    	// now request the report data for that product.
+    	var startDate, endDate, reportResolution, utcStart, utcEnd;
+        console.log("running the report");
+        startDate = $scope.startDate.getStringDate();
+        endDate = $scope.endDate.getStringDate();
+        reportResolution = $scope.reportResolution.selected;
+        console.log("start date is: " + startDate);
+        console.log("end date is:" + endDate);
+        
+        utcStart = $scope.startDate.getUTCDate();
+        utcEnd =  $scope.endDate.getUTCDate();
+        console.log('utcStart' + utcStart);
+        console.log('utcEnd' + utcEnd);
+        $scope.showprogress = true;
+        //$scope.progressMessage = 'Getting data... (can take a few minutes)'
+        //$scope.progressbarState = 5;
+        $scope.chartObject = {};
+        firstChart = true;
+
+    	chartDataObject = runReportFactory.query( {'startDate': utcStart, 
+		                         'endDate': utcEnd, 
+		                         'reportResolution': reportResolution,
+		                         'product': product} );
+		                         
+		chartDataObject.$promise.then(function(chartDataObject) {
+			if (firstChart === true) {
+				console.log("Have the data for the first chart now!:");
+				firstChart = false;
+				$scope.chartObject = chartDataObject;
+				console.log("chart data is: " + JSON.stringify(chartDataObject));
+			} else {
+				// adding data to the chart.
+				console.log("need to update the chart data with the data that has been returned");
+		        console.log('data to be appended is', JSON.stringify(chartDataObject));
+		        //$scope.chartObject.data = chartDataObject.data;
+		        updateDataTable(chartDataObject);
+			}
+		});
+		chartDataObject.$promise['finally']( function(data) {
+			$scope.showprogress = false;
+		});
+		
+    }
+    
+    function updateDataTable(updateData) {
+    	// need to rip through the update data and add a row to the 
+    	// data that exists in the struct $scope.chartObject
+    	//cols":[{"type":"string","id":"sample_time","label":"Sample Time"},{"type":"number","id":"EDITOR_used","label":"EDITOR"}]}
+    	// dealing with the columns!
+    	var i, j;
+    	console.log("updating the column info...")
+    	for (i=0; i<updateData.data.cols.length; i+=1) {
+    		curColLabel = updateData.data.cols[i].label;
+    		if (curColLabel !== 'Sample Time') {
+    			newCol = updateData.data.cols[i]
+    			$scope.chartObject.data.cols.push(newCol);
+    		}
+    	}
+    	sampleTimeDict = {};
+    	// dealing with the rows:
+    	// start by creating a dictionary that allows me to the corresponding
+    	// position in the rows data struct of a specific sample time.
+    	// it also allows us to test to see if a sample time exists or not.
+		for (j=0; j<$scope.chartObject.data.rows.length; j+=1) {
+			sampleTime = $scope.chartObject.data.rows[j].c[0].v;
+			$scope.chartObject.data.rows[j].c.push({"v":0});
+			sampleTimeDict[sampleTime] = j;
+		}
+		// get the column position the new data should be inserted into
+    	thisRowPosition = $scope.chartObject.data.rows[0].c.length - 1;
+    	console.log("postion is: " + thisRowPosition);
+    	
+    	
+    	for (i=0; i<updateData.data.rows.length; i+=1) {
+    		sampleTime1 = updateData.data.rows[i].c[0].v;
+    		licenseUsed = updateData.data.rows[i].c[1];
+    		// if the date has an entry in the current data struct enter it here.
+    		if (sampleTimeDict.hasOwnProperty(sampleTime1)) {
+    			rowCnt = sampleTimeDict[sampleTime1]
+    			//console.log('row: ' + $scope.chartObject.data.rows[rowCnt] + ' j: ' + rowCnt);
+    			$scope.chartObject.data.rows[rowCnt].c[thisRowPosition] = licenseUsed;
+    		}
+    		// new row needs to be inserted for the specific date
+    		for (j=0; j<$scope.chartObject.data.rows.length; j+=1) {
+    			curSampleTime = $scope.chartObject.data.rows[j].c[0];
+    			if (curSampleTime > sampleTime1) {
+    				// insert a row in here, add that logic!
+    				// TODO: add logic to insert row here
+    				
+    			}
+    			
+    		}
+ 
+    	};
+    	
+    	console.log("appended data is:" + JSON.stringify($scope.chartObject));
+    	
+    }
+    
     $scope.runReport = function () {
         var startDate, endDate, reportResolution, utcStart, utcEnd;
         console.log("running the report");
@@ -121,28 +223,52 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory,
         $scope.showprogress = true;
         $scope.progressMessage = 'Getting data... (can take a few minutes)'
         $scope.progressbarState = 100;
-        $scope.products = productConfig.query(function() {
-        	console.log('got the products!');
-        	for (var i=0; i<$scope.products.length; i+=1) {
-        		console.log("  product:" + $scope.products[i]['data']);
-        		//console.log("  keys: " + Object.keys($scope.products[i]));
+        
+        // First request the products from the database
+        $scope.products = productConfig.query();
+        
+        // once the products have been resolved execute this function
+        $scope.products.$promise.then(function(data) {
+        	for (var i=0; i<data.length; i+=1) {
+        		$scope.progressMessage = 'Getting license data for ( ' + $scope.products[i]['data'] + ' ) ';
+        		progress = Math.round(((i + 1) * 100 ) / data.length);
+        		$scope.progressbarState = progress;
+        		console.log('progress is:' + progress);
+        		console.log('product: '+ data[i]['data'] + ' ' + $scope.products[i]['data']);
+        		// now request the report data for the current product
+        		requestReportData($scope.products[i]['data']);
+        	}
         	
-        	$scope.chartObject = runReportFactory.query(
-	                                {'startDate': utcStart, 
-	                                'endDate': utcEnd, 
-	                                'reportResolution': reportResolution,
-	                                'product': $scope.products[i]['data']}, function() {
-	            var i, j, row, chartData;
-	            //chartData = restructData($scope.reportData);
-	            //$scope.chartObject = $scope.reportData;
-	            console.log('chartObject');
-	            console.log(JSON.stringify($scope.chartObject));
-	            $scope.showprogress = false;
-	        });
-	        }
-        	
-        	
-        });
+   		});
+        console.log("here now");
+        
+        
+        // This stuff works, but need to fix it up so that the async update
+        // of the chart works!
+        // $scope.products = productConfig.query(function() {
+        	// console.log('got the products!');
+        	// for (var i=0; i<$scope.products.length; i+=1) {
+        		// console.log("  product:" + $scope.products[i]['data']);        	
+	        	// $scope.chartObject = runReportFactory.query(
+		                                // {'startDate': utcStart, 
+		                                // 'endDate': utcEnd, 
+		                                // 'reportResolution': reportResolution,
+		                                // 'product': $scope.products[i]['data']}, function() {
+		            // var i, j, row, chartData;
+		            // //chartData = restructData($scope.reportData);
+		            // //$scope.chartObject = $scope.reportData;
+		            // console.log('chartObject');
+		            // console.log(JSON.stringify($scope.chartObject));
+		            // $scope.showprogress = false;
+		        // });
+	        // }
+//         	
+//         	
+        // });
+        
+        
+        
+        
         // TODO: modify this query to run a separate query per product
         // $scope.products = productConfig.query( function() {
             // console.log("products:" + $scope.products );
@@ -260,8 +386,8 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory,
    $scope.progressbarState = 0;
    $scope.progressMessage = '';
    
-   
-   
+   // the chart data table
+   $scope.chartObject = undefined;
    
 };
 
