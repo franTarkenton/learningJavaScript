@@ -61,7 +61,10 @@ esriStatsServices.factory('runReportFactory', ['$resource',
             baseUrl + 'report/:st/:ed/:res', 
                 {st:'@startDate', 
                  ed: '@endDate',
-                 res: '@reportResolution'}
+                 res: '@reportResolution'}, 
+                 {
+                 	query: {method: 'GET', params: {}, isArray: false}
+                 }
         );
 }]);
 

@@ -121,21 +121,44 @@ var cntrlFunction = function ($scope, $routeParams, $location, runReportFactory,
         $scope.showprogress = true;
         $scope.progressMessage = 'Getting data... (can take a few minutes)'
         $scope.progressbarState = 100;
-        // TODO: modify this query to run a separate query per product
-        //$scope.products = productConfig.query({}, function() {
-            //console.log("products:" + $scope.products );
-	        $scope.reportData = runReportFactory.query(
+        $scope.products = productConfig.query(function() {
+        	console.log('got the products!');
+        	for (var i=0; i<$scope.products.length; i+=1) {
+        		console.log("  product:" + $scope.products[i]['data']);
+        		//console.log("  keys: " + Object.keys($scope.products[i]));
+        	
+        	$scope.chartObject = runReportFactory.query(
 	                                {'startDate': utcStart, 
 	                                'endDate': utcEnd, 
-	                                'reportResolution': reportResolution}, function() {
+	                                'reportResolution': reportResolution,
+	                                'product': $scope.products[i]['data']}, function() {
 	            var i, j, row, chartData;
-	            chartData = restructData($scope.reportData);
-	            $scope.chartObject = chartData;
+	            //chartData = restructData($scope.reportData);
+	            //$scope.chartObject = $scope.reportData;
 	            console.log('chartObject');
-	            console.log(JSON.stringify(chartData));
+	            console.log(JSON.stringify($scope.chartObject));
 	            $scope.showprogress = false;
 	        });
-        //) 
+	        }
+        	
+        	
+        });
+        // TODO: modify this query to run a separate query per product
+        // $scope.products = productConfig.query( function() {
+            // console.log("products:" + $scope.products );
+	        // $scope.reportData = runReportFactory.query(
+	                                // {'startDate': utcStart, 
+	                                // 'endDate': utcEnd, 
+	                                // 'reportResolution': reportResolution}, function() {
+	            // var i, j, row, chartData;
+	            // console.log("report data: " + $scope.reportData);
+	            // //chartData = restructData($scope.reportData);
+	            // $scope.chartObject = $scope.reportData;
+	            // console.log('chartObject');
+	            // console.log(JSON.stringify(chartData));
+	            // $scope.showprogress = false;
+	        // });
+        // ) ;
     };
     
     function restructData(inData) {
